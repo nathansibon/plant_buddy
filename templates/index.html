@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Current Data {{name}}</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+<style>
+    th, td {padding: 5px;}
+</style>
+</head>
+
+<body>
+
+<h1>Data from {{name}} located at {{location}}</h1>
+<h1>Current:</h1>
+<h2>Last read at {{time}}</h2>
+<table>
+    <tr>
+        <th></th>
+        <th style='text-align:center'>Drybulb</th>
+        <th style='text-align:center'>Relative Humidity</th>
+    </tr>
+    <tr>
+        <td>Indoor</td>
+        <td style='text-align:center'>{{indoor_drybulb}} °C</td>
+        <td style='text-align:center'>{{indoor_rh}}%</td>
+    </tr>
+    <tr>
+        <td>Outdoor</td>
+        <td style='text-align:center'>{{outdoor_drybulb}} °C</td>
+        <td style='text-align:center'>{{outdoor_rh}}%</td>
+    </tr>
+</table>
+
+<h1>Yesterday's Indoor Conditions:</h1>
+<table>
+    <tr>
+        <th></th>
+        <th style='text-align:center'>High</th>
+        <th style='text-align:center'>Low</th>
+    </tr>
+    <tr>
+        <td>Drybulb</td>
+        <td style='text-align:center'>{{yesterday_drybulb_max}} °C</td>
+        <td style='text-align:center'>{{yesterday_drybulb_min}} °C</td>
+    </tr>
+    <tr>
+        <td>Relative Humidity</td>
+        <td style='text-align:center'>{{yesterday_rh_max}}%</td>
+        <td style='text-align:center'>{{yesterday_rh_min}}%</td>
+    </tr>
+</table>
+
+<h1>Last Week</h1>
+<table>
+    <tr>
+        <img src="/static/last_week_drybulb.png" alt="drybulb graph" width="80%" height="auto">
+    </tr>
+    <tr>
+        <img src="/static/last_week_rh.png" alt="drybulb graph" width="80%" height="auto">
+    </tr>
+</table>
+
+</body>
+</html>
