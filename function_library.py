@@ -9,13 +9,12 @@ import matplotlib.dates as mdates
 # These packages will raise an error if not running this code on a Pi
 # Adding this error handling will allow coding and debugging on PC
 try:
-    import board, adafruit_dht
+    import board, adafruit_dht, busio, adafruit_veml7700
 except:
     print('not connected to pi, problematic libraries not imported')
     pass
 
-# All the magical functions in gen. order: gathering raw data, calculate metrics, non-weather stuff, database functions
-
+# READ SENSORS AND QUERY APIS
 def get_outdoor_weather():
 
     owm = pyowm.OWM(weather_api_key)
@@ -53,10 +52,7 @@ def get_outdoor_weather():
 
     return output
 
-def get_indoor_weather():
-
-    # Initial the dht device, with data pin connected to:
-    dhtDevice = adafruit_dht.DHT22(board.D4)
+def get_indoor_all():
 
     output = [
         datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -64,42 +60,105 @@ def get_indoor_weather():
         location
     ]
 
+    if sensors.get('temp_humid') != 'none':
+        # output is [0] datetime [1] serial [2] location [3] drybulb [4] rh
+        for i in get_indoor_weather():
+            output.append(i)
+
+        # output is now [0] datetime [1] serial [2] location [3] drybulb [4] rh [5] wet bulb [6] dew point, [7] vapor pressure deficit
+        output = calc_indoor_weather(output)
+    else:
+        logging.info('No temp/humidity sensor listed, adding placeholders')
+        for i in range(5):
+            output.append(0)
+
+    if sensors.get('light') != 'none':
+        # output is [0] datetime [1] serial [2] location [3] drybulb [4] rh [5] wet bulb [6] dew point, [7] vapor pressure deficit [8] white_light [9] lux
+        for i in get_indoor_light():
+            output.append(i)
+    else:
+        logging.info('No light sensor listed, adding placeholders')
+        for i in range(2):
+            output.append(0)
+
+    # TODO add soil moisture sensor
+
+    return output
+
+def get_indoor_weather():
+
+    # Initial the dht device, with data pin connected to:
+    dhtDevice = adafruit_dht.DHT22(board.D4)
+
     # Unfortunately, this sensor doesn't always read correctly so error handling and noise reduction is included
     max = 5
     drybulb = []
     humid = []
+    output = []
 
     while len(drybulb) < max:
+
+        # The DHT22 is reportedly slow at reading, this wait hopefully prevents a bad read (i.e. wildly different than it should be) on fail
+        time.sleep(2)
 
         try:
             temp_drybulb = dhtDevice.temperature
             temp_humid = round(dhtDevice.humidity / 100, 2)  # convert RH from "50%" to "0.50" to match outdoor weather format and work in calculations
         except:
             logging.info('Error reading Temp-Humid Sensor, retrying...')
-            continue
 
         drybulb.append(temp_drybulb)
         humid.append(temp_humid)
-
-        # The DHT22 is reportedly slow at reading, this wait hopefully prevents a bad read (i.e. wildly different than it should be) on fail
-        time.sleep(2)
-
+    logging.info('dht22 data:')
+    logging.info(drybulb)
+    logging.info(humid)
     output.append(std_filter(drybulb, 1, 2))
     output.append(std_filter(humid, 1, 2))
 
-    # output is [0] datetime [1] serial [2] location [3] drybulb [4] rh
     return output
 
+def get_indoor_light():
+
+    i2c = busio.I2C(board.SCL, board.SDA)
+    light = adafruit_veml7700.VEML7700(i2c)
+
+    max = 5
+    white = []  # white light channel includes a ~flat response from ~550 nm to ~850 nm, consistent with important wavelengths for plant energy. not super clear from doc but appears to be in SI lux
+    lux = []  # band-pass filter reading centered at ~550 nm, apparently correlates well to human perception of brightness. in SI lux.
+    output = []
+
+    while len(white) < max:
+
+        try:
+            temp_white = light.white
+            temp_lux = light.lux
+        except:
+            logging.info('Error reading Light Sensor, retrying...')
+            continue
+
+        white.append(temp_white)
+        lux.append(temp_lux)
+
+        time.sleep(1)
+
+    output.append(std_filter(white, 1, 1))
+    output.append(std_filter(lux, 1, 1))
+
+    return output
+
+# COMPILED CALCS
 def calc_outdoor_weather(data):
 
     temp = [
-        wet_bulb(data[1],data[2]),
-        dew_point(data[1],data[2]),
+        wet_bulb(data[1], data[2]),
+        dew_point(data[1], data[2]),
+        vpd(data[1], data[2])
     ]
 
-    # new list is now [0] DATE_TIME, [1] TEMPERATURE, [2] RELATIVE HUMIDITY, [3] CLOUD COVER, [4] PRECIPITATION, [5] WET BULB, [6] DEW POINT
+    # new list is now [0] DATE_TIME, [1] TEMPERATURE, [2] RELATIVE HUMIDITY, [3] CLOUD COVER, [4] RAIN, [5] WIND, [6] STATUS, [7] SUNRISE, [8] SUNSET, [9] WET BULB, [10] DEW POINT, [11] Vapor Pressure Deficit
     data.append(temp[0])
     data.append(temp[1])
+    data.append(temp[2])
 
     return data
 
@@ -108,14 +167,17 @@ def calc_indoor_weather(data):
     temp = [
         wet_bulb(data[3], data[4]),
         dew_point(data[3], data[4]),
+        vpd(data[3], data[4])
     ]
 
-    # new list is now [0] datetime [1] serial [2] location [3] drybulb [4] rh [5] wet bulb [6] dew point
+    # new list is now [0] datetime [1] serial [2] location [3] drybulb [4] rh [5] wet bulb [6] dew point, [7] vapor pressure deficit
     data.append(temp[0])
     data.append(temp[1])
+    data.append(temp[2])
 
     return data
 
+# INDIVIDUAL METRIC CALCULATIONS
 def wet_bulb(temp_C, rh):
     # Calculate the wet-bulb temperature using the Stull formula (valid between 5%-99% RH and -20 to 50 degrees C. source: https://www.omnicalculator.com/physics/wet-bulb#how-to-calculate-the-wet-bulb-temperature
 
@@ -147,6 +209,19 @@ def dew_point(temp_C, rh):
 
     return output
 
+def vpd(temp_C, rh):
+
+    svp = 610.7 * math.pow(10, (7.5 * temp_C) / (237.3 + temp_C))
+
+    vpd_out = np.round((svp * (1 - rh)) / 1000, 2)
+
+    # Source used: http://cronklab.wikidot.com/calculation-of-vapour-pressure-deficit
+    # Other Sources
+    #   1: https://pulsegrow.com/blogs/learn/vpd#calculate
+    #   2: https://physics.stackexchange.com/questions/4343/how-can-i-calculate-vapor-pressure-deficit-from-temperature-and-relative-humidit
+
+    return vpd_out
+
 def getserial():
     # Extract serial from cpuinfo file. Source: https://www.raspberrypi-spy.co.uk/2012/09/getting-your-raspberry-pi-serial-number-using-python/
     cpuserial = "0000000000000000"
@@ -161,6 +236,28 @@ def getserial():
 
     return cpuserial
 
+def std_filter(data, tolerance, rounding):
+
+    # source https://forum.dexterindustries.com/t/solved-dht-sensor-occasionally-returning-spurious-values/2939/5
+
+    data = np.array(data)
+    sd = np.std(data)
+
+    if sd == 0:
+        return np.mean(data)
+
+    sd = sd * tolerance
+    mean = np.mean(data)
+    filtered = []
+    for i in data:
+        if mean - sd <= i <= mean + sd:
+            filtered.append(i)
+
+    output = round(np.mean(filtered), rounding)
+
+    return output
+
+# DATA STORAGE
 def update_db(db_path, indoor, outdoor):
 
     conn = sqlite3.connect(db_path)
@@ -174,7 +271,10 @@ def update_db(db_path, indoor, outdoor):
         "drybulb real, "
         "rh real, "
         "wetbulb real, "
-        "dewpoint real)"
+        "dewpoint real,"
+        "vpd real,"
+        "white_light real,"
+        "lux real)"
     )
 
     conn.commit()
@@ -189,9 +289,12 @@ def update_db(db_path, indoor, outdoor):
         drybulb,
         rh,
         wetbulb,
-        dewpoint
+        dewpoint,
+        vpd,
+        white_light,
+        lux
         )
-        VALUES(?,?,?,?,?,?,?)
+        VALUES(?,?,?,?,?,?,?,?,?,?)
     '''
 
     # Execute command but substitute ? placeholders above with actual data from indoor
@@ -211,7 +314,9 @@ def update_db(db_path, indoor, outdoor):
         "sunrise timestamp,"
         "sunset timestamp, "
         "wetbulb real, "
-        "dewpoint real)"
+        "dewpoint real,"
+        "vpd real"
+        ")"
     )
 
     conn.commit()
@@ -228,9 +333,10 @@ def update_db(db_path, indoor, outdoor):
         sunrise,
         sunset,
         wetbulb,
-        dewpoint
+        dewpoint,
+        vpd
         ) 
-        VALUES(?,?,?,?,?,?,?,?,?,?,?)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
     '''
 
     # Execute command but substitute ? placeholders above with actual data from indoor
@@ -282,7 +388,7 @@ def process_daily_outdoor(conn, sql):
         if outdoor[column_name].dtype == 'float64':
             column_list.extend([column_name + '_max', column_name + '_max_time', column_name + '_min',
                                 column_name + '_min_time', column_name + '_range', column_name + '_period',
-                                column_name + '_rate'])
+                                column_name + '_rate', column_name + '_mean'])
 
     # Note: only works if index is Datetime
 
@@ -306,11 +412,13 @@ def process_daily_outdoor(conn, sql):
 
             for (column_name, column_data) in d_data.iteritems():
 
-                if d_data[column_name].dtype == 'float64':
+                if d_data[column_name].dtype == 'float64' and d_data[column_name].isnull().values.any() == False:
+
                     # Find min, max and range of data
-                    d_max = d_data[column_name].max()
+                    d_max = round(d_data[column_name].max(), 2)
                     d_min = d_data[column_name].min()
                     d_range = np.round(d_max - d_min, 1)
+                    d_mean = d_data[column_name].mean()
 
                     max_time_options = d_data.index[d_data[column_name] == d_max]
                     min_time_options = d_data.index[d_data[column_name] == d_min]
@@ -328,9 +436,14 @@ def process_daily_outdoor(conn, sql):
                     min_time = min_time.time()
 
                     values.update(
-                        {column_name + '_max': d_max, column_name + '_max_time': max_time, column_name + '_min': d_min,
-                         column_name + '_min_time': min_time, column_name + '_range': d_range, column_name + '_period':
-                             period, column_name + '_rate': rate})
+                        {column_name + '_max': d_max,
+                         column_name + '_max_time': max_time,
+                         column_name + '_min': d_min,
+                         column_name + '_min_time': min_time,
+                         column_name + '_range': d_range,
+                         column_name + '_period': period,
+                         column_name + '_rate': rate,
+                         column_name + '_mean' : d_mean})
 
             if d_data[(d_data.index.hour > 7) & (d_data.index.hour < 20)].clouds.mean() > 0.3:
                 sun = 1
@@ -343,7 +456,6 @@ def process_daily_outdoor(conn, sql):
 
         else:
             logging.info('Partial Day, # of entries = ' + str(len(outdoor[outdoor.index.day == day].index)))
-            #logging.info('Found todays data, pass')
 
     return day_data
 
@@ -352,7 +464,14 @@ def process_daily_indoor(conn, sql):
     # New pandas dataframe with datetime as index
     indoor = pd.read_sql_query(sql, conn)
     indoor['date_time'] = pd.to_datetime(indoor.date_time)
-    indoor.set_index('date_time', inplace=True)
+    indoor.set_index('date_time', inplace=True)     # Note: only works if index is Datetime
+
+    # Get sunrise and sunset times from the outdoor dataset so statistics for light are for daytime only
+    sql = 'SELECT date_time, sunrise, sunset FROM outdoor_raw'
+    outdoor = pd.read_sql_query(sql, conn)
+    outdoor['date_time'] = pd.to_datetime(outdoor.date_time)
+    outdoor['sunrise'] = pd.to_datetime(outdoor.sunrise)
+    outdoor['sunset'] = pd.to_datetime(outdoor.sunset)
 
     # Get list of columns from dataframe to be processed and set up column names of new dataframe
     column_list = []
@@ -360,9 +479,7 @@ def process_daily_indoor(conn, sql):
         if indoor[column_name].dtype == 'float64':
             column_list.extend([column_name + '_max', column_name + '_max_time', column_name + '_min',
                                 column_name + '_min_time', column_name + '_range', column_name + '_period',
-                                column_name + '_rate'])
-
-    # Note: only works if index is Datetime
+                                column_name + '_rate', column_name + '_mean'])
 
     # Create empty dataframe for adding caclulated stats
     day_data = pd.DataFrame(columns=column_list)
@@ -370,95 +487,226 @@ def process_daily_indoor(conn, sql):
     logging.info('current day = ' + datetime.now().strftime("%d"))
 
     # Loop through each day and calculate stats for each
-    for day in set(indoor.index.day):
+    for month in set(indoor.index.month):
+        for day in set(indoor[indoor.index.month == month].index.day):
 
-        logging.info('processing day '+str(day))
-        if len(indoor[indoor.index.day == day].index) > 85:  # Check if data is full 24 hours (or close enough, 90th percentile)
-            logging.info('full day')
-        #if str(day) != datetime.now().strftime("%d"): # Only process if data collection for the day is over
+            logging.info('processing day '+str(day))
+            if len(indoor[indoor.index.day == day].index) > 85:  # Check if data is full 24 hours (or close enough, 90th percentile)
+                logging.info('full day')
+            #if str(day) != datetime.now().strftime("%d"): # Only process if data collection for the day is over
 
-            d_data = indoor[indoor.index.day == day]  # Make working dataframe of only today's data
+                d_data = indoor[indoor.index.day == day]  # Make working dataframe of only today's data
+                d_sunrise = outdoor[outdoor.date_time.dt.day == day].sunrise.dt.hour.mean()
+                d_sunset = outdoor[outdoor.date_time.dt.day == day].sunset.dt.hour.mean()
 
-            date = d_data.index[:1].date[0]
-            values = {}
+                date = d_data.index[:1].date[0]
+                values = {}
 
-            for (column_name, column_data) in d_data.iteritems():
+                for (column_name, column_data) in d_data.iteritems():
 
-                if d_data[column_name].dtype == 'float64':
-                    # Find min, max and range of data
-                    d_max = d_data[column_name].max()
-                    d_min = d_data[column_name].min()
-                    d_range = np.round(d_max - d_min, 1)
+                    if d_data[column_name].dtype == 'float64' and d_data[column_name].isnull().values.any() == False:
 
-                    max_time_options = d_data.index[d_data[column_name] == d_max]
-                    min_time_options = d_data.index[d_data[column_name] == d_min]
-                    max_time = max_time_options.mean()
-                    min_time = min_time_options.mean()
-                    period = max_time - min_time
-                    period = round(period.seconds / 3600, 1)  # Reduce period from Timedelta to Hours
+                        if column_name == 'lux' or column_name == 'white_light':
 
-                    if period > 0.01:
-                        rate = d_range / period
-                    else:
-                        rate = 0
+                            d_max = d_data[column_name].max()
+                            max_time_options = d_data.index[d_data[column_name] == d_max].mean()
+                            max_time = max_time_options.strftime('%H:%M:%S')
+                            d_mean = d_data[(d_data.index.hour > d_sunrise + 1) & (
+                                        d_data.index.hour < d_sunset - 1)].lux.mean()
 
-                    max_time = max_time.time()
-                    min_time = min_time.time()
+                            values.update(
+                                {column_name + '_max': d_max,
+                                 column_name + '_max_time': max_time,
+                                 column_name + '_mean': d_mean})
 
-                    values.update(
-                        {column_name + '_max': d_max, column_name + '_max_time': max_time, column_name + '_min': d_min,
-                         column_name + '_min_time': min_time, column_name + '_range': d_range,
-                         column_name + '_period': period, column_name + '_rate': rate})
+                        else:
 
-                    values.update({column_name: column_data[0]})
+                            # Find min, max, average and range of data
+                            d_max = d_data[column_name].max()
+                            d_min = d_data[column_name].min()
+                            d_mean = np.round(d_data[column_name].mean(), 2)
+                            d_range = np.round(d_max - d_min, 1)
 
-            # values = {'Drybulb Max': d_max, 'Max Time': max_time, 'Drybulb Min': d_min, 'Min Time': min_time, 'Drybulb Range': d_range, 'Warm Up Time': warm_up_time}
-            row = pd.Series(values, name=date)
-            day_data = day_data.append(row)
+                            max_time_options = d_data.index[d_data[column_name] == d_max]
+                            min_time_options = d_data.index[d_data[column_name] == d_min]
+                            max_time = max_time_options.mean()
+                            min_time = min_time_options.mean()
+                            period = max_time - min_time
+                            period = round(period.seconds / 3600, 1)  # Reduce period from Timedelta to Hours
 
-        else:
-            logging.info('Partial Day, # of entries = ' + str(len(indoor[indoor.index.day == day].index)))
-            #logging.info('Found todays data, pass')
+                            if period > 0.01:
+                                rate = d_range / period
+                            else:
+                                rate = 0
+
+                            max_time = max_time.strftime('%H:%M:%S')
+                            min_time = min_time.strftime('%H:%M:%S')
+
+                            values.update(
+                                {column_name + '_max': d_max,
+                                 column_name + '_max_time': max_time,
+                                 column_name + '_min': d_min,
+                                 column_name + '_min_time': min_time,
+                                 column_name + '_range': d_range,
+                                 column_name + '_period': period,
+                                 column_name + '_rate': rate,
+                                 column_name + '_mean': d_mean})
+
+                row = pd.Series(values, name=date)
+                day_data = day_data.append(row)
+
+            else:
+                logging.info('Partial Day, # of entries = ' + str(len(indoor[indoor.index.day == day].index)))
 
     # update yesterday section for webpage with last row of processed data
-    update_web_vars_daily(row)
+    print(day_data.lux_mean)
+    print(row)
+    try:
+        update_web_vars_daily(row)
+    except Exception as e:
+        logging.info('Update Daily Web Vars Failed')
+        logging.info(e)
 
     return day_data
 
+def process_yesterday(indoor_yesterday, sunrise, sunset):
+
+    values = {}
+    for (column_name, column_data) in indoor_yesterday.iteritems():
+        print(column_name)
+        if indoor_yesterday[column_name].dtype == 'float64' and indoor_yesterday[
+            column_name].isnull().values.any() == False:
+
+            if column_name == 'lux' or column_name == 'white_light':
+
+                d_max = indoor_yesterday[column_name].max()
+                max_time_options = indoor_yesterday.date_time[indoor_yesterday[column_name] == d_max].mean()
+                max_time = max_time_options.strftime('%H:%M:%S')
+                d_mean = indoor_yesterday[(indoor_yesterday.date_time.dt.hour > sunrise + 1) & (
+                        indoor_yesterday.date_time.dt.hour < sunset - 1)].lux.mean()
+
+                values.update(
+                    {column_name + '_max': d_max,
+                     column_name + '_max_time': max_time,
+                     column_name + '_mean': d_mean})
+
+            else:
+
+                # Find min, max, average and range of data
+                d_max = indoor_yesterday[column_name].max()
+                d_min = indoor_yesterday[column_name].min()
+                d_mean = np.round(indoor_yesterday[column_name].mean(), 2)
+                d_range = np.round(d_max - d_min, 1)
+                print(d_max)
+                max_time_options = indoor_yesterday.date_time[indoor_yesterday[column_name] == d_max]
+                min_time_options = indoor_yesterday.date_time[indoor_yesterday[column_name] == d_min]
+                print(max_time_options)
+                max_time = max_time_options.mean()
+                min_time = min_time_options.mean()
+                period = max_time - min_time
+                period = round(period.seconds / 3600, 1)  # Reduce period from Timedelta to Hours
+
+                if period > 0.01:
+                    rate = d_range / period
+                else:
+                    rate = 0
+                print(max_time)
+                max_time = max_time.strftime('%H:%M:%S')
+                min_time = min_time.strftime('%H:%M:%S')
+
+                values.update(
+                    {column_name + '_max': d_max,
+                     column_name + '_max_time': max_time,
+                     column_name + '_min': d_min,
+                     column_name + '_min_time': min_time,
+                     column_name + '_range': d_range,
+                     column_name + '_period': period,
+                     column_name + '_rate': rate,
+                     column_name + '_mean': d_mean})
+
+    row = pd.Series(values)
+    return row
+
+# WEBPAGE
 def update_web_vars_sensor(indoor, outdoor):
 
-    file = open(r'webpage_sensor_data.py','r+')
+    time = pd.to_datetime(indoor[0]).strftime('%H:%M')
 
-    text = [
-        "read_time = '"+time.strftime("%H:%M:%S", time.localtime())+"'\n",
-        "indoor_drybulb = '"+str(math.floor(indoor[3]))+"'\n",
-        "indoor_rh = '"+str(math.floor(indoor[4]*100))+"'\n",
-        "\n",
-        "outdoor_drybulb = '" + str(math.floor(outdoor[1])) + "'\n",
-        "outdoor_rh = '" + str(math.floor(outdoor[2]*100)) + "'\n",
-    ]
+    dict = {'time' : time,
+            'outdoor_drybulb': str(math.floor(outdoor[1])),
+            'outdoor_rh': str(math.floor(outdoor[2] * 100)),
+            'outdoor_vpd': str(outdoor[11])
+            }
 
-    file.writelines(text)
-    file.close()
+    if sensors.get('temp_humid') != 'none':
+        dict['indoor_drybulb'] = str(math.floor(indoor[3]))
+        dict['indoor_rh'] = str(math.floor(indoor[4] * 100))
+        dict['indoor_vpd'] = str(indoor[7])
+    else:
+        dict['indoor_drybulb'] = 'n/a'
+        dict['indoor_rh'] = 'n/a'
+        dict['indoor_vpd'] = 'n/a'
+
+    if sensors.get('light') != 'none':
+        dict['indoor_lux'] = str(indoor[9])
+    else:
+        dict['indoor_lux'] = 'n/a'
+
+    s = pd.Series(dict)
+    s.to_csv('webpage_sensor_data.csv')
 
     return
 
 def update_web_vars_daily(data):
 
-    file = open(r'webpage_daily_data.py','r+')
+    logging.info('script started')
+    logging.info(data)
 
-    file.truncate(0)
-    file.seek(0)
-
-    text = [
-        "yesterday_drybulb_max = '" + str(math.floor(data.drybulb_max)) + "'\n",
-        "yesterday_drybulb_min = '" + str(math.floor(data.drybulb_min)) + "'\n",
-        "yesterday_rh_max = '" + str(math.floor(data.rh_max * 100)) + "'\n",
-        "yesterday_rh_min = '" + str(math.floor(data.rh_min * 100)) + "'"
+    metrics = [
+        'drybulb',
+        'rh',
+        'vpd',
+        'lux'
     ]
 
-    file.writelines(text)
-    file.close()
+    types = [
+        'mean',
+        'max',
+        'min',
+        'max_time',
+        'min_time'
+    ]
+
+    list = []
+
+    for i in metrics:
+        for j in types:
+            list.append(i + '_' + j)
+
+    dict = {}
+
+    for i in list:
+        try:
+            if i in ['rh_mean', 'rh_max', 'rh_min']:
+                dict['yesterday_' + i] = str(math.floor(float(data[i]) * 100))
+
+            elif type(data[i]) is numpy.float64:
+                dict['yesterday_' + i] = data[i]
+
+            elif i[-4:] == 'time':
+                dict['yesterday_' + i] = pd.to_datetime(data[i]).strftime('%H:%M')
+
+            else:
+                dict['yesterday_' + i] = data[i]
+
+        except Exception as e:
+            logging.info('error writing dictionary')
+            logging.info(e)
+            dict['yesterday_' + i] = 'n/a'
+
+    logging.info(dict)
+    s = pd.Series(dict)
+    s.to_csv('webpage_daily_data.csv')
 
     return
 
@@ -471,13 +719,13 @@ def update_web_charts(db_path):
     last_week = last_week.round('min')
 
     # get previous week worth of data for chart
-    sql = 'SELECT date_time, drybulb, rh FROM indoor_raw WHERE date_time > datetime("' + str(last_week) + '")'
+    sql = 'SELECT date_time, drybulb, rh, vpd, lux FROM indoor_raw WHERE location="' + location + '" AND date_time > datetime("' + str(last_week) + '")'
     indoor = pd.read_sql_query(sql, conn)
     indoor['date_time'] = pd.to_datetime(indoor.date_time)
     indoor.set_index('date_time', inplace=True)
 
     # get previous week worth of data for chart
-    sql = 'SELECT date_time, drybulb, rh FROM outdoor_raw WHERE date_time > datetime("' + str(last_week) + '")'
+    sql = 'SELECT date_time, drybulb, rh, vpd FROM outdoor_raw WHERE date_time > datetime("' + str(last_week) + '")'
     outdoor = pd.read_sql_query(sql, conn)
     outdoor['date_time'] = pd.to_datetime(outdoor.date_time)
     outdoor.set_index('date_time', inplace=True)
@@ -492,6 +740,7 @@ def update_web_charts(db_path):
     #ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
     ax.xaxis.grid(b=True, which='major', color='grey')
     ax.yaxis.grid(b=True, which='major', color='grey')
+    ax.tick_params(labelright=True)
     fig.autofmt_xdate()
     ax.fmt_xdata = mdates.DateFormatter('%m-%d')
     plt.savefig('static/last_week_drybulb.png')
@@ -507,33 +756,40 @@ def update_web_charts(db_path):
     #ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
     ax.xaxis.grid(b=True, which='major', color='grey')
     ax.yaxis.grid(b=True, which='major', color='grey')
+    ax.tick_params(labelright=True)
     fig.autofmt_xdate()
     ax.fmt_xdata = mdates.DateFormatter('%m-%d')
     plt.savefig('static/last_week_rh.png')
     plt.close()
 
+    # create vpd plot
+    fig, ax = plt.subplots(figsize=(15, 5))
+    plt.title('Vapor Pressure Deficit')
+    ax.plot(indoor.vpd, label='Indoor', alpha=.8)
+    ax.plot(outdoor.vpd, label='Outdoor', alpha=.8)
+    plt.ylim(0, 3)
+    ax.legend()
+    #ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
+    ax.xaxis.grid(b=True, which='major', color='grey')
+    ax.yaxis.grid(b=True, which='major', color='grey')
+    ax.tick_params(labelright=True)
+    fig.autofmt_xdate()
+    ax.fmt_xdata = mdates.DateFormatter('%m-%d')
+    plt.savefig('static/last_week_vpd.png')
+    plt.close()
+
+    # create indoor lux plot
+    fig, ax = plt.subplots(figsize=(15, 5))
+    plt.title('Indoor Light')
+    ax.plot(indoor.lux, alpha=.8)
+    ax.xaxis.grid(b=True, which='major', color='grey')
+    ax.yaxis.grid(b=True, which='major', color='grey')
+    ax.tick_params(labelright=True)
+    fig.autofmt_xdate()
+    ax.fmt_xdata = mdates.DateFormatter('%m-%d')
+    plt.savefig('static/last_week_lux.png')
+    plt.close()
+
     conn.close()
 
     return
-
-
-def std_filter(data, tolerance, rounding):
-
-    # source https://forum.dexterindustries.com/t/solved-dht-sensor-occasionally-returning-spurious-values/2939/5
-
-    data = np.array(data)
-    sd = np.std(data)
-
-    if sd == 0:
-        return np.mean(data)
-
-    sd = sd * tolerance
-    mean = np.mean(data)
-    filtered = []
-    for i in data:
-        if mean - sd <= i <= mean + sd:
-            filtered.append(i)
-
-    output = round(np.mean(filtered), rounding)
-
-    return output

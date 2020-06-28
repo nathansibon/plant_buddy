@@ -9,78 +9,33 @@ def do():
     # Initialize global SQL functions
     conn = connect(name + '_data.db')
     cur = conn.cursor()
+    yesterday = pd.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - pd.Timedelta('1 days')
 
-    logging.info('Begin Outdoor Section')
+    sql = 'SELECT * FROM indoor_raw WHERE date_time > datetime("' + str(yesterday) + '")'
+    indoor_yesterday = pd.read_sql_query(sql, conn)
+    indoor_yesterday['date_time'] = pd.to_datetime(indoor_yesterday.date_time)
+    print(indoor_yesterday)
+    print('')
 
-    cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
-    fetch = cur.fetchall()
+    sql = 'SELECT date_time, sunrise, sunset FROM outdoor_raw WHERE date_time > datetime("' + str(yesterday) + '")'
+    outdoor = pd.read_sql_query(sql, conn)
+    outdoor['date_time'] = pd.to_datetime(outdoor.date_time)
+    outdoor['sunrise'] = pd.to_datetime(outdoor.sunrise)
+    outdoor['sunset'] = pd.to_datetime(outdoor.sunset)
+    sunrise = outdoor[outdoor.date_time.dt.day == yesterday.day].sunrise.min().hour
+    sunset = outdoor[outdoor.date_time.dt.day == yesterday.day].sunset.min().hour
 
-    # Get only the data which hasn't been processed
-    for entry in fetch:
-        if entry == 'outdoor_day':
-            logging.info('Previous outdoor data found')
-            cur.execute('SELECT * FROM outdoor_day ORDER BY rowid DESC LIMIT 1;')
-            row = cur.fetchone()
-            last_row = pd.to_datetime(row[0])
 
-            # add a time which will always be after the last daily entry (since the acutal time may vary depending on read speed)
-            last_row = str(last_row.date()) + ' 23:50:00'
+    data = process_yesterday(indoor_yesterday, sunrise, sunset)
 
-            # Get only the data which needs to be processed. Meh... security < convenience
-            sql = 'SELECT * FROM outdoor_raw WHERE date_time > datetime("' + str(last_row) + '")'
+    try:
+        update_web_vars_daily(data)
+    except Exception as e:
+        logging.info('Update Daily Web Vars Failed')
+        logging.info(e)
 
-        else:
-            logging.info('New database, processing all entries')
-            sql = 'SELECT * FROM outdoor_raw'
+    return
 
-    day_data = process_daily_outdoor(conn, sql)
-
-    # Write new data to database
-    if day_data.empty == False:
-        try:
-            day_data.sort_index(inplace=True)
-            day_data.to_sql("outdoor_day", conn, if_exists="append")
-            logging.info('Data Written')
-        except:
-            logging.info('Write failed!')
-
-    else:
-        logging.info('day_data is empty!')
-
-    logging.info('Begin Indoor Section')
-
-    for entry in fetch:
-        if entry == 'indoor_day':
-            logging.info('Previous indoor data found')
-            cur.execute('SELECT * FROM indoor_day ORDER BY rowid DESC LIMIT 1;')
-            row = cur.fetchone()
-            last_row = pd.to_datetime(row[0])
-
-            # add a time which will always be after the last daily entry (since the acutal time may vary depending on read speed)
-            last_row = str(last_row.date()) + ' 23:50:00'
-
-            # Get only the data which needs to be processed. Meh... security < convenience
-            sql = 'SELECT * FROM indoor_raw WHERE date_time > datetime("' + str(last_row) + '")'
-
-        else:
-            logging.info('New database, processing all entries')
-            sql = 'SELECT * FROM indoor_raw'
-
-    day_data = process_daily_indoor(conn, sql)
-
-    # Write new data to database
-    if day_data.empty == False:
-        try:
-            day_data.sort_index(inplace=True)
-            day_data.to_sql("indoor_day", conn, if_exists="append")
-            logging.info('Data Written')
-        except:
-            logging.info('Write failed!')
-
-    else:
-        logging.info('day_data is empty!')
-
-    conn.close()
 
 # Set all paths to the current directory so cron job will not crash, but code will still run if you move files later...
 abspath = os.path.abspath(__file__)
@@ -95,5 +50,6 @@ try:
     do()
 except Exception as e:
     logging.exception('Error in main')
+    print(e)#logging.info(e)
 
 logging.info('completed @ ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n')
