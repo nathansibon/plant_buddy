@@ -9,9 +9,17 @@ import matplotlib.dates as mdates
 # These packages will raise an error if not running this code on a Pi
 # Adding this error handling will allow coding and debugging on PC
 try:
-    import board, adafruit_dht, busio, adafruit_veml7700
-except:
-    print('not connected to pi, problematic libraries not imported')
+    import board, adafruit_dht
+except Exception as e:
+    logging.info('not connected to pi, problematic libraries not imported (1 of 2)')
+    logging.info(e)
+    pass
+
+try:
+    import busio, adafruit_veml7700
+except Exception as e:
+    logging.info('not connected to pi, problematic libraries not imported (2 of 2)')
+    logging.info(e)
     pass
 
 # READ SENSORS AND QUERY APIS
