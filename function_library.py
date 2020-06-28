@@ -590,8 +590,8 @@ def process_yesterday(indoor_yesterday, sunrise, sunset):
                 d_max = indoor_yesterday[column_name].max()
                 max_time_options = indoor_yesterday.date_time[indoor_yesterday[column_name] == d_max].mean()
                 max_time = max_time_options.strftime('%H:%M:%S')
-                d_mean = indoor_yesterday[(indoor_yesterday.date_time.dt.hour > sunrise + 1) & (
-                        indoor_yesterday.date_time.dt.hour < sunset - 1)].lux.mean()
+                d_mean = np.round(indoor_yesterday[(indoor_yesterday.date_time.dt.hour > sunrise + 1) & (
+                        indoor_yesterday.date_time.dt.hour < sunset - 1)].lux.mean(),2)
 
                 values.update(
                     {column_name + '_max': d_max,
