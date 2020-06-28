@@ -29,7 +29,7 @@ Here's the basic setup steps:
 
 
 4. Also hook up the DHT22 sensor per adafruit's instruction. I'm using the 3v power because i may want the 5v for something else later. 
-	It still works fine thanks to some error handling/noise reduction in the read code.
+	It still works fine thanks to some error handling/noise reduction in the read code. You may need to edit the pin called in function_library -> get_indoor_weather()
 
 5. Copy all the files to a new directory of your liking. Mine is in a samba shared folder so i can easily access all the files from 
 	my windows laptop but whatever works for you.
