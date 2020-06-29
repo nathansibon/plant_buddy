@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Current Data {{name}}</title>
+    <!-- this next part disables browser caching, otherwise the charts won't update! -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
@@ -22,16 +23,22 @@
         <th></th>
         <th style='text-align:center'>Drybulb</th>
         <th style='text-align:center'>Relative Humidity</th>
+        <th style='text-align:center'>Vapor Pressure Deficit</th>
+        <th style='text-align:center'>Light</th>
     </tr>
     <tr>
         <td>Indoor</td>
         <td style='text-align:center'>{{indoor_drybulb}} °C</td>
         <td style='text-align:center'>{{indoor_rh}}%</td>
+        <td style='text-align:center'>{{indoor_vpd}} kPa</td>
+        <td style='text-align:center'>{{indoor_lux}} lux</td>
     </tr>
     <tr>
         <td>Outdoor</td>
         <td style='text-align:center'>{{outdoor_drybulb}} °C</td>
         <td style='text-align:center'>{{outdoor_rh}}%</td>
+        <td style='text-align:center'>{{outdoor_vpd}} kPa</td>
+        <td></td>
     </tr>
 </table>
 
@@ -39,18 +46,44 @@
 <table>
     <tr>
         <th></th>
+        <th style='text-align:center'>Mean</th>
         <th style='text-align:center'>High</th>
+        <th style='text-align:center'>High Time</th>
         <th style='text-align:center'>Low</th>
+        <th style='text-align:center'>Low Time</th>
     </tr>
     <tr>
         <td>Drybulb</td>
+        <td style='text-align:center'>{{yesterday_drybulb_mean}} °C</td>
         <td style='text-align:center'>{{yesterday_drybulb_max}} °C</td>
+        <td style='text-align:center'>{{yesterday_drybulb_max_time}}</td>
         <td style='text-align:center'>{{yesterday_drybulb_min}} °C</td>
+        <td style='text-align:center'>{{yesterday_drybulb_min_time}}</td>
+
     </tr>
     <tr>
         <td>Relative Humidity</td>
+        <td style='text-align:center'>{{yesterday_rh_mean}}%</td>
         <td style='text-align:center'>{{yesterday_rh_max}}%</td>
+        <td style='text-align:center'>{{yesterday_rh_max_time}}</td>
         <td style='text-align:center'>{{yesterday_rh_min}}%</td>
+        <td style='text-align:center'>{{yesterday_rh_min_time}}</td>
+    </tr>
+    <tr>
+        <td>Vapor Pressure Deficit</td>
+        <td style='text-align:center'>{{yesterday_vpd_mean}} kPa</td>
+        <td style='text-align:center'>{{yesterday_vpd_max}} kPa</td>
+        <td style='text-align:center'>{{yesterday_vpd_max_time}}</td>
+        <td style='text-align:center'>{{yesterday_vpd_min}} kPa</td>
+        <td style='text-align:center'>{{yesterday_vpd_min_time}}</td>
+    </tr>
+    <tr>
+        <td>Light</td>
+        <td style='text-align:center'>{{yesterday_lux_mean}} lux</td>
+        <td style='text-align:center'>{{yesterday_lux_max}} lux</td>
+        <td style='text-align:center'>{{yesterday_lux_max_time}}</td>
+        <td></td>
+        <td></td>
     </tr>
 </table>
 
@@ -61,6 +94,12 @@
     </tr>
     <tr>
         <img src="/static/last_week_rh.png" alt="drybulb graph" width="80%" height="auto">
+    </tr>
+    <tr>
+        <img src="/static/last_week_vpd.png" alt="drybulb graph" width="80%" height="auto">
+    </tr>
+    <tr>
+        <img src="/static/last_week_lux.png" alt="lux graph" width="80%" height="auto">
     </tr>
 </table>
 
