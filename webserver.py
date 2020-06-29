@@ -1,7 +1,6 @@
 from flask import Flask, render_template
-from webpage_sensor_data import *
-from webpage_daily_data import *
 from config import *
+import csv
 
 app = Flask(__name__)
 
@@ -12,21 +11,29 @@ def index():
     f_location = location.replace('_', '')
 
     data = {
-        'time' : read_time,
-        'name' : f_name,
-        'location' : f_location,
-        'indoor_drybulb' : indoor_drybulb,
-        'indoor_rh' : indoor_rh,
-        'outdoor_drybulb' : outdoor_drybulb,
-        'outdoor_rh' : outdoor_rh,
-        'yesterday_drybulb_max' : yesterday_drybulb_max,
-        'yesterday_drybulb_min' : yesterday_drybulb_min,
-        'yesterday_rh_max' : yesterday_rh_max,
-        'yesterday_rh_min' : yesterday_rh_min
+        'name': f_name,
+        'location': f_location
     }
+
+    # Get the current status variables from CSV
+    reader = csv.reader(open('webpage_sensor_data.csv'))
+    for row in reader:
+        if row[0] == '':
+            pass
+        else:
+            data[row[0]] = row[1]
+
+    # Get the daily of the variables from CSV
+    reader = csv.reader(open('webpage_daily_data.csv'))
+    for row in reader:
+        if row[0] == '':
+            pass
+        else:
+            data[row[0]] = row[1]
 
     return render_template('index.html', **data)
 
+# this method sets the chart images to expire after 5 mins so the browser will fetch new images instead of using the cache
 @app.after_request
 def add_header(response):
     response.cache_control.max_age = 300

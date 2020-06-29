@@ -12,11 +12,7 @@ def do():
     outdoor = calc_outdoor_weather(outdoor)
 
     # retrieve data from sensor(s), then calculate additional metrics from retrieved data and append list.
-    indoor = get_indoor_weather()
-
-    # add location of unit from above into list at position 4 (since primary key is excluded)
-    # list is now PI SERIAL, DATE_TIME, LOCATION, TEMPERATURE, RELATIVE HUMIDITY, WET BULB, DEW POINT
-    indoor = calc_indoor_weather(indoor)
+    indoor = get_indoor_all()
 
     # Full path of database: /home/pi/share/env_datalogger/Pi_X_data.db
     update_db(name + '_data.db', indoor, outdoor)
@@ -31,12 +27,13 @@ dname = os.path.dirname(abspath)
 os.chdir(dname)
 
 logging.basicConfig(filename='logs/collect_data.log', level=logging.INFO)
-logging.info('script started @ ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+logging.info('started @ ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
 # general purpose error handling to log file. very helpful when executing from cron since you don't see errors
 try:
     do()
 except Exception as e:
     logging.exception('Error in main')
+    logging.info(e)
 
 logging.info('completed @ ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n')
