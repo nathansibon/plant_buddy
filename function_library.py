@@ -26,24 +26,25 @@ except Exception as e:
 def get_outdoor_weather():
 
     owm = pyowm.OWM(weather_api_key)
-    obs_list = owm.weather_at_coords(latitude, longitude)
-    weather = obs_list.get_weather()
+    mgr = owm.weather_manager()
+    obs_list = mgr.weather_at_coords(latitude, longitude)
+    weather = obs_list.weather
 
-    drybulb = weather.get_temperature(unit='celsius')['temp']  # drybulb in C
-    rh = weather.get_humidity() / 100  # % relative humidity
-    clouds = weather.get_clouds() / 100  # % cloud cover
-    if weather.get_rain() == {}:
+    drybulb = weather.temperature(unit='celsius')['temp']  # drybulb in C
+    rh = weather.humidity / 100  # % relative humidity
+    clouds = weather.clouds / 100  # % cloud cover
+    if weather.rain == {}:
         rain = 0
     else:
-        rain = weather.get_rain()  # mm of precipitation
+        rain = weather.rain  # mm of precipitation
         rain = rain.get('1h')
-    wind = weather.get_wind()['speed']  # meters/second
-    status = weather.get_status()  # string description of current weather
+    wind = weather.wind()['speed']  # meters/second
+    status = weather.status  # string description of current weather
 
-    sunrise = pd.to_datetime(weather.get_sunrise_time('iso'))
+    sunrise = pd.to_datetime(weather.sunrise_time('iso'))
     sunrise = sunrise.tz_convert(tz=timezone)
 
-    sunset = pd.to_datetime(weather.get_sunset_time('iso'))
+    sunset = pd.to_datetime(weather.sunset_time('iso'))
     sunset = sunset.tz_convert(tz=timezone)
 
     output = [
