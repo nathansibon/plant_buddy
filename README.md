@@ -17,7 +17,7 @@ Here's the basic setup steps:
     pandas        1.0.3     data analysis
     sqlite3       ?         database reading/writing
     numpy         1.16.2    calculations
-    pyowm         2.10.0    openweathermap, source for outdoor weather
+    pyowm         3.0.0     openweathermap, source for outdoor weather
     matplotlib    3.0.2     creating charts
     flask         1.0.2     basic webserver for python
 
