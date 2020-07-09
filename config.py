@@ -18,3 +18,5 @@ sensors = {
     'light': 'none',
     'soil_moisture': 'none'
 }
+
+ideal_vpd = 1 # will be used to recommend a humidity level based on the drybulb temperature. Typical values are between 0.8 - 1.2 for average plants.

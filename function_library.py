@@ -74,15 +74,15 @@ def get_indoor_all():
         for i in get_indoor_weather():
             output.append(i)
 
-        # output is now [0] datetime [1] serial [2] location [3] drybulb [4] rh [5] wet bulb [6] dew point, [7] vapor pressure deficit
+        # output is now [0] datetime [1] serial [2] location [3] drybulb [4] rh [5] wet bulb [6] dew point, [7] vapor pressure deficit [8] rh for vpd [9] white_light [10] lux
         output = calc_indoor_weather(output)
     else:
         logging.info('No temp/humidity sensor listed, adding placeholders')
-        for i in range(5):
+        for i in range(6):
             output.append(0)
 
     if sensors.get('light') != 'none':
-        # output is [0] datetime [1] serial [2] location [3] drybulb [4] rh [5] wet bulb [6] dew point, [7] vapor pressure deficit [8] white_light [9] lux
+        # output is [0] datetime [1] serial [2] location [3] drybulb [4] rh [5] wet bulb [6] dew point, [7] vapor pressure deficit [8] rh for vpd [9] white_light [10] lux
         for i in get_indoor_light():
             output.append(i)
     else:
@@ -118,9 +118,6 @@ def get_indoor_weather():
 
         drybulb.append(temp_drybulb)
         humid.append(temp_humid)
-    logging.info('dht22 data:')
-    logging.info(drybulb)
-    logging.info(humid)
     output.append(std_filter(drybulb, 1, 2))
     output.append(std_filter(humid, 1, 2))
 
@@ -176,25 +173,25 @@ def calc_indoor_weather(data):
     temp = [
         wet_bulb(data[3], data[4]),
         dew_point(data[3], data[4]),
-        vpd(data[3], data[4])
+        vpd(data[3], data[4]),
+        rh_for_vpd(data[3], ideal_vpd)
     ]
 
-    # new list is now [0] datetime [1] serial [2] location [3] drybulb [4] rh [5] wet bulb [6] dew point, [7] vapor pressure deficit
-    data.append(temp[0])
-    data.append(temp[1])
-    data.append(temp[2])
+    # new list is now [0] datetime [1] serial [2] location [3] drybulb [4] rh [5] wet bulb [6] dew point, [7] vapor pressure deficit, [8] rh for vpd
+    for i in temp:
+        data.append(i)
 
     return data
 
 # INDIVIDUAL METRIC CALCULATIONS
-def wet_bulb(temp_C, rh):
+def wet_bulb(temp_c, rh):
     # Calculate the wet-bulb temperature using the Stull formula (valid between 5%-99% RH and -20 to 50 degrees C. source: https://www.omnicalculator.com/physics/wet-bulb#how-to-calculate-the-wet-bulb-temperature
 
     rh = rh * 100
 
-    output = temp_C * numpy.arctan(0.151977 *
+    output = temp_c * numpy.arctan(0.151977 *
                                    (rh + 8.313659) ** (1 / 2)) + \
-             numpy.arctan(temp_C + rh) - \
+             numpy.arctan(temp_c + rh) - \
              numpy.arctan(rh - 1.676331) + 0.00391838 * \
              rh ** (3 / 2) * numpy.arctan(0.023101 * rh) - 4.686035
     # Returns Wet bulb in C
@@ -203,14 +200,14 @@ def wet_bulb(temp_C, rh):
 
     return output
 
-def dew_point(temp_C, rh):
+def dew_point(temp_c, rh):
     #Dew point is a measure of moisture capacity of the air at certain temp and pressure. This is a better indicator of comfort than RH
     #Calculate the dew point using the Magnus-Tetens formula (Sonntag90) that allows us to obtain accurate results (with an uncertainty of 0.35°C) for temperatures ranging from -45°C to 60°C. source: https://www.omnicalculator.com/physics/dew-point#howto
 
     a = 17.62
     b = 243.12
 
-    alpha = math.log(rh,2.71828) + a * temp_C / (b + temp_C)
+    alpha = math.log(rh,2.71828) + a * temp_c / (b + temp_c)
 
     output = (b * alpha) / (a - alpha)
 
@@ -218,18 +215,28 @@ def dew_point(temp_C, rh):
 
     return output
 
-def vpd(temp_C, rh):
+def vpd(temp_c, rh):
 
-    svp = 610.7 * math.pow(10, (7.5 * temp_C) / (237.3 + temp_C))
+    svp = 610.7 * math.pow(10, (7.5 * temp_c) / (237.3 + temp_c))
 
-    vpd_out = np.round((svp * (1 - rh)) / 1000, 2)
+    vpd = np.round((svp * (1 - rh)) / 1000, 2)
 
     # Source used: http://cronklab.wikidot.com/calculation-of-vapour-pressure-deficit
     # Other Sources
     #   1: https://pulsegrow.com/blogs/learn/vpd#calculate
     #   2: https://physics.stackexchange.com/questions/4343/how-can-i-calculate-vapor-pressure-deficit-from-temperature-and-relative-humidit
 
-    return vpd_out
+    return vpd
+
+def rh_for_vpd(temp_c, vpd):
+
+    # see function vpd() for sources
+    svp = 610.7 * math.pow(10, (7.5 * temp_c) / (237.3 + temp_c))
+    vpd = vpd * 1000 # this equation takes Pa, not kPa.
+    rh = 1 - (vpd / svp)
+    rh = np.round(rh, 2)
+
+    return rh
 
 def getserial():
     # Extract serial from cpuinfo file. Source: https://www.raspberrypi-spy.co.uk/2012/09/getting-your-raspberry-pi-serial-number-using-python/
@@ -282,6 +289,7 @@ def update_db(db_path, indoor, outdoor):
         "wetbulb real, "
         "dewpoint real,"
         "vpd real,"
+        "rh_req_for_vpd real,"
         "white_light real,"
         "lux real)"
     )
@@ -300,10 +308,11 @@ def update_db(db_path, indoor, outdoor):
         wetbulb,
         dewpoint,
         vpd,
+        rh_req_for_vpd,
         white_light,
         lux
         )
-        VALUES(?,?,?,?,?,?,?,?,?,?)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?)
     '''
 
     # Execute command but substitute ? placeholders above with actual data from indoor
@@ -568,8 +577,7 @@ def process_daily_indoor(conn, sql):
                 logging.info('Partial Day, # of entries = ' + str(len(indoor[indoor.index.day == day].index)))
 
     # update yesterday section for webpage with last row of processed data
-    print(day_data.lux_mean)
-    print(row)
+
     try:
         update_web_vars_daily(row)
     except Exception as e:
@@ -582,7 +590,6 @@ def process_yesterday(indoor_yesterday, sunrise, sunset):
 
     values = {}
     for (column_name, column_data) in indoor_yesterday.iteritems():
-        print(column_name)
         if indoor_yesterday[column_name].dtype == 'float64' and indoor_yesterday[
             column_name].isnull().values.any() == False:
 
@@ -650,6 +657,7 @@ def update_web_vars_sensor(indoor, outdoor):
     if sensors.get('temp_humid') != 'none':
         dict['indoor_drybulb'] = str(math.floor(indoor[3]))
         dict['indoor_rh'] = str(math.floor(indoor[4] * 100))
+        dict['req_rh'] = str(math.floor(indoor[8] * 100))
         dict['indoor_vpd'] = str(indoor[7])
     else:
         dict['indoor_drybulb'] = 'n/a'
@@ -657,7 +665,7 @@ def update_web_vars_sensor(indoor, outdoor):
         dict['indoor_vpd'] = 'n/a'
 
     if sensors.get('light') != 'none':
-        dict['indoor_lux'] = str(indoor[9])
+        dict['indoor_lux'] = str(math.floor(indoor[10]))
     else:
         dict['indoor_lux'] = 'n/a'
 
