@@ -56,15 +56,15 @@ Here's the basic setup steps:
 	This will run the collect_data script every 15 mins, and the process_daily script once a day just after midnight. 
 	For more info on using crontab and syntax (https://crontab.guru/)
 
-    */15 * * * * /usr/bin/python3 /home/pi/share/env_datalogger/collect_data.py
-    10 0 * * * /usr/bin/python3 /home/pi/share/env_datalogger/process_daily.py
+    	*/15 * * * * /usr/bin/python3 /home/pi/share/env_datalogger/collect_data.py
+    	10 0 * * * /usr/bin/python3 /home/pi/share/env_datalogger/process_daily.py
 
 9. Start the Flask webserver. The most reliable way I've found for a headless Pi setup (i.e. no monitor keyboard or mouse connected) is by setting up a VNC connection 
 	(start at step 10 https://desertbot.io/blog/headless-raspberry-pi-4-remote-desktop-vnc-setup) and running the script from a new shell window (do not close the window)
 	You can also look into writing a custom daemon to wrap the webserver script (good luck) or using other methods from an SSH shell like 'nohup' or 'screen' 
 	but i didn't seem to have great luck there and makes it hard to troubleshoot errors when the server crashes from an error.
 	
-	9.1 another way to auto-start the flask server (that's working for me so far...) is to add another line to your Crontab file:
+	9.1 another way to auto-start the flask server at boot (that's working for me so far...) is to add another line to your Crontab file. Good for power outages etc.
 	
 		@reboot /usr/bin/python3 /home/pi/share/env_datalogger/webserver.py &
 
