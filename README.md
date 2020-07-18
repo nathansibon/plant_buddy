@@ -63,6 +63,10 @@ Here's the basic setup steps:
 	(start at step 10 https://desertbot.io/blog/headless-raspberry-pi-4-remote-desktop-vnc-setup) and running the script from a new shell window (do not close the window)
 	You can also look into writing a custom daemon to wrap the webserver script (good luck) or using other methods from an SSH shell like 'nohup' or 'screen' 
 	but i didn't seem to have great luck there and makes it hard to troubleshoot errors when the server crashes from an error.
+	
+	9.1 another way to auto-start the flask server (that's working for me so far...) is to add another line to your Crontab file:
+	
+		@reboot /usr/bin/python3 /home/pi/share/env_datalogger/webserver.py &
 
 10. When flask starts, you'll see both the port you'll need to access the data webpage
 
