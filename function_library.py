@@ -722,6 +722,12 @@ def update_web_vars_daily(data):
             if i in ['rh_mean', 'rh_max', 'rh_min']:
                 dict['yesterday_' + i] = str(math.floor(float(data[i]) * 100))
 
+            elif i in ['drybulb_mean', 'drybulb_max', 'drybulb_min']:
+                if temp_scale == 'C':
+                    dict['yesterday_' + i] = data[i]
+                elif temp_scale == 'F':
+                    dict['yesterday_' + i] = round(data[i] * (9.0/5.0) + 32,1)
+
             elif type(data[i]) is numpy.float64:
                 dict['yesterday_' + i] = data[i]
 
