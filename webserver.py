@@ -1,6 +1,11 @@
 from flask import Flask, render_template
 from config import *
-import csv
+import csv, os
+
+# Set all paths to the current directory so cron job will not crash, but code will still run if you move files later...
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
 
 app = Flask(__name__)
 
