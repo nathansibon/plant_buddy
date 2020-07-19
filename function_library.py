@@ -648,14 +648,27 @@ def update_web_vars_sensor(indoor, outdoor):
 
     time = pd.to_datetime(indoor[0]).strftime('%H:%M')
 
-    dict = {'time' : time,
-            'outdoor_drybulb': str(math.floor(outdoor[1])),
-            'outdoor_rh': str(math.floor(outdoor[2] * 100)),
-            'outdoor_vpd': str(outdoor[11])
-            }
+    if temp_scale == 'C':
+
+        dict = {'time' : time,
+                'outdoor_drybulb': str(math.floor(outdoor[1])),
+                'outdoor_rh': str(math.floor(outdoor[2] * 100)),
+                'outdoor_vpd': str(outdoor[11])
+                }
+
+    elif temp_scale == 'F':
+        dict = {'time' : time,
+                'outdoor_drybulb': str(math.floor((outdoor[1]*(9/5))+32)),
+                'outdoor_rh': str(math.floor(outdoor[2] * 100)),
+                'outdoor_vpd': str(outdoor[11])
+                }
 
     if sensors.get('temp_humid') != 'none':
-        dict['indoor_drybulb'] = str(math.floor(indoor[3]))
+        if temp_scale == 'C':
+            dict['indoor_drybulb'] = str(math.floor(indoor[3]))
+        elif temp_scale == 'F':
+            dict['indoor_drybulb'] = str(math.floor((indoor[3]*(9/5))+32))
+
         dict['indoor_rh'] = str(math.floor(indoor[4] * 100))
         dict['req_rh'] = str(math.floor(indoor[8] * 100))
         dict['indoor_vpd'] = str(indoor[7])
@@ -668,6 +681,8 @@ def update_web_vars_sensor(indoor, outdoor):
         dict['indoor_lux'] = str(math.floor(indoor[10]))
     else:
         dict['indoor_lux'] = 'n/a'
+
+    dict['temp_scale'] = temp_scale
 
     s = pd.Series(dict)
     s.to_csv('webpage_sensor_data.csv')
@@ -707,6 +722,12 @@ def update_web_vars_daily(data):
             if i in ['rh_mean', 'rh_max', 'rh_min']:
                 dict['yesterday_' + i] = str(math.floor(float(data[i]) * 100))
 
+            elif i in ['drybulb_mean', 'drybulb_max', 'drybulb_min']:
+                if temp_scale == 'C':
+                    dict['yesterday_' + i] = data[i]
+                elif temp_scale == 'F':
+                    dict['yesterday_' + i] = round(data[i] * (9.0/5.0) + 32,1)
+
             elif type(data[i]) is numpy.float64:
                 dict['yesterday_' + i] = data[i]
 
@@ -736,13 +757,19 @@ def update_web_charts(db_path):
     last_week = last_week.round('min')
 
     # get previous week worth of data for chart
-    sql = 'SELECT date_time, drybulb, rh, vpd, lux FROM indoor_raw WHERE location="' + location + '" AND date_time > datetime("' + str(last_week) + '")'
+    if temp_scale == 'C':
+        sql = 'SELECT date_time, drybulb, rh, vpd, lux FROM indoor_raw WHERE location="' + location + '" AND date_time > datetime("' + str(last_week) + '")'
+    elif temp_scale == 'F':
+        sql = 'SELECT date_time, (drybulb * (9.0/5.0)) + 32 as drybulb, rh, vpd, lux FROM indoor_raw WHERE location="' + location + '" AND date_time > datetime("' + str(last_week) + '")'
     indoor = pd.read_sql_query(sql, conn)
     indoor['date_time'] = pd.to_datetime(indoor.date_time)
     indoor.set_index('date_time', inplace=True)
 
     # get previous week worth of data for chart
-    sql = 'SELECT date_time, drybulb, rh, vpd FROM outdoor_raw WHERE date_time > datetime("' + str(last_week) + '")'
+    if temp_scale == 'C':
+        sql = 'SELECT date_time, drybulb, rh, vpd FROM outdoor_raw WHERE date_time > datetime("' + str(last_week) + '")'
+    elif temp_scale == 'F':
+        sql = 'SELECT date_time, (drybulb * (9.0/5.0)) + 32 as drybulb, rh, vpd FROM outdoor_raw WHERE date_time > datetime("' + str(last_week) + '")'
     outdoor = pd.read_sql_query(sql, conn)
     outdoor['date_time'] = pd.to_datetime(outdoor.date_time)
     outdoor.set_index('date_time', inplace=True)
@@ -752,7 +779,10 @@ def update_web_charts(db_path):
     plt.title('Drybulb')
     ax.plot(indoor.drybulb, label='Indoor', alpha=.8)
     ax.plot(outdoor.drybulb, label='Outdoor', alpha=.8)
-    plt.ylim(5, 35)
+    if temp_scale == 'C':
+        plt.ylim(5, 35)
+    elif temp_scale == 'F':
+        plt.ylim(40,100)
     ax.legend()
     #ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
     ax.xaxis.grid(b=True, which='major', color='grey')
