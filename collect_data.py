@@ -7,6 +7,9 @@ from config import *
 # This makes writing log files much simpler and will work whether it's run from the shell or a cron job
 def do():
 
+    # verify the user's database is properly set up and no columns are missing
+    verify_db(name + '_data.db')
+
     # retrieve data from OpenWeatherMap API, then calculate additional metrics from retrieved data and append list
     outdoor = get_outdoor_weather()
     outdoor = calc_outdoor_weather(outdoor)
@@ -29,11 +32,15 @@ os.chdir(dname)
 logging.basicConfig(filename='logs/collect_data.log', level=logging.INFO)
 logging.info('started @ ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-# general purpose error handling to log file. very helpful when executing from cron since you don't see errors
-try:
-    do()
-except Exception as e:
-    logging.exception('Error in main')
-    logging.info(e)
+# this 'if' is necessary to allow other scripts (such as buttons on the flask server) to trigger the system to read sensors, but prevent this from running on module import
+if __name__ == "__main__":
+    # general purpose error handling to log file. helpful when executing from cron since you don't see errors
+    try:
+        do()
+    except Exception as e:
+        logging.exception('Error in main')
+        logging.info(e)
 
-logging.info('completed @ ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n')
+    logging.info('completed @ ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n')
+
+    exit()

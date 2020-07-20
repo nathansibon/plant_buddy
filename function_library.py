@@ -274,6 +274,44 @@ def std_filter(data, tolerance, rounding):
     return output
 
 # DATA STORAGE
+def verify_db(db_path):
+
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+    tables = pd.read_sql_query("SELECT `name` FROM `sqlite_master` WHERE type='table'", conn)
+
+    for tbl in check:
+        if tbl in tables.name.values:
+            print('table ' + tbl + ' found, checking values')
+            columns = pd.read_sql_query("PRAGMA table_info('" + tbl + "')", conn)
+            for col in check.get(tbl):
+                if col[0] in columns.name.values:
+                    pass
+                elif col[0] == 'index':
+                    pass
+                else:
+                    print('Missing ' + col[0] + ', adding to db')
+                    cur.execute('ALTER TABLE ' + str(tbl) + ' ADD COLUMN ' + str(col[0]) + ' ' + col[1])
+                    conn.commit()
+            print('table correct')
+            print('\n')
+        else:
+            print('missing table: ' + tbl)
+            sql = 'create table if not exists ' + tbl + ' ('
+            for i, txt in enumerate(check.get(tbl)):
+                if i == len(check.get(tbl)) - 1:
+                    sql = sql + txt[0] + ' ' + txt[1]
+                else:
+                    sql = sql + txt[0] + ' ' + txt[1] + ', '
+            sql = sql + ')'
+            print(sql)
+            conn.execute(sql)
+            conn.commit()
+
+    conn.close()
+    logging.info('Database ' + db_path + ' verified')
+
+
 def update_db(db_path, indoor, outdoor):
 
     conn = sqlite3.connect(db_path)
