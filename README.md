@@ -55,9 +55,10 @@ Here's the basic setup steps:
 	Be sure to update the path to your directory! 
 	This will run the collect_data script every 15 mins, and the process_daily script once a day just after midnight. 
 	For more info on using crontab and syntax (https://crontab.guru/)
+	The section after >> is the location of the log file. you can skip this i suppose but it makes any troubleshooting down the road a lot easier.
 
-    	*/15 * * * * /usr/bin/python3 /home/pi/share/env_datalogger/collect_data.py
-    	10 0 * * * /usr/bin/python3 /home/pi/share/env_datalogger/process_daily.py
+    	*/15 * * * * /usr/bin/python3 /home/pi/share/env_datalogger/collect_data.py >> /home/pi/share/env_datalogger/logs/collect_data.log
+    	10 0 * * * /usr/bin/python3 /home/pi/share/env_datalogger/process_daily.py >> /home/pi/share/env_datalogger/logs/process_daily.log
 
 9. Start the Flask webserver. The most reliable way I've found for a headless Pi setup (i.e. no monitor keyboard or mouse connected) is by setting up a VNC connection 
 	(start at step 10 https://desertbot.io/blog/headless-raspberry-pi-4-remote-desktop-vnc-setup) and running the script from a new shell window (do not close the window)
