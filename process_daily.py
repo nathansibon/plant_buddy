@@ -31,8 +31,8 @@ def do():
     try:
         update_web_vars_daily(data)
     except Exception as e:
-        logging.info('Update Daily Web Vars Failed')
-        logging.info(e)
+        print('Update Daily Web Vars Failed')
+        print(e)
 
     return
 
@@ -42,14 +42,14 @@ abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 os.chdir(dname)
 
-logging.basicConfig(filename='logs/process_daily.log',level=logging.INFO)
-logging.info('script started @ ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+#logging.basicConfig(filename='logs/process_daily.log',level=print)
+print('script started @ ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
 # general purpose error handling to log file. very helpful when executing from cron since you don't see errors
 try:
     do()
 except Exception as e:
-    logging.exception('Error in main')
-    print(e)#logging.info(e)
+    print('Error in main')
+    print(e)
 
-logging.info('completed @ ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n')
+print('completed @ ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n')

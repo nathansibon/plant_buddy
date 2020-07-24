@@ -1,6 +1,8 @@
-from function_library import *
-import logging, time, os, datetime
+import time, os
+from datetime import datetime
+#import logging
 from config import *
+from function_library import *
 
 # This is where the main code is kept for this script.
 # We enclose it in a function so we can wrap it in a general purpose error-handler as shown below
@@ -8,7 +10,7 @@ from config import *
 def do():
 
     # verify the user's database is properly set up and no columns are missing
-    verify_db(name + '_data.db')
+    #verify_db(name + '_data.db')
 
     # retrieve data from OpenWeatherMap API, then calculate additional metrics from retrieved data and append list
     outdoor = get_outdoor_weather()
@@ -29,8 +31,8 @@ abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 os.chdir(dname)
 
-logging.basicConfig(filename='logs/collect_data.log', level=logging.INFO)
-logging.info('started @ ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+#logging.basicConfig(filename='logs/collect_data.log', level=print)
+print('started @ ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
 # this 'if' is necessary to allow other scripts (such as buttons on the flask server) to trigger the system to read sensors, but prevent this from running on module import
 if __name__ == "__main__":
@@ -38,9 +40,9 @@ if __name__ == "__main__":
     try:
         do()
     except Exception as e:
-        logging.exception('Error in main')
-        logging.info(e)
+        print('Error in main')
+        print(e)
 
-    logging.info('completed @ ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n')
+    print('completed @ ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n')
 
     exit()

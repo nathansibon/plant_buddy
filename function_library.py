@@ -1,7 +1,10 @@
+# coding=utf-8
+
 import math, numpy, sqlite3, time, logging, pyowm
 import pandas as pd
 import numpy as np
 from config import *
+import sys_var
 from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -11,15 +14,15 @@ import matplotlib.dates as mdates
 try:
     import board, adafruit_dht
 except Exception as e:
-    logging.info('not connected to pi, problematic libraries not imported (1 of 2)')
-    logging.info(e)
+    print('not connected to pi, problematic libraries not imported (1 of 2)')
+    print(e)
     pass
 
 try:
     import busio, adafruit_veml7700
 except Exception as e:
-    logging.info('not connected to pi, problematic libraries not imported (2 of 2)')
-    logging.info(e)
+    print('not connected to pi, problematic libraries not imported (2 of 2)')
+    print(e)
     pass
 
 # READ SENSORS AND QUERY APIS
@@ -77,7 +80,7 @@ def get_indoor_all():
         # output is now [0] datetime [1] serial [2] location [3] drybulb [4] rh [5] wet bulb [6] dew point, [7] vapor pressure deficit [8] rh for vpd [9] white_light [10] lux
         output = calc_indoor_weather(output)
     else:
-        logging.info('No temp/humidity sensor listed, adding placeholders')
+        print('No temp/humidity sensor listed, adding placeholders')
         for i in range(6):
             output.append(0)
 
@@ -86,7 +89,7 @@ def get_indoor_all():
         for i in get_indoor_light():
             output.append(i)
     else:
-        logging.info('No light sensor listed, adding placeholders')
+        print('No light sensor listed, adding placeholders')
         for i in range(2):
             output.append(0)
 
@@ -114,7 +117,7 @@ def get_indoor_weather():
             temp_drybulb = dhtDevice.temperature
             temp_humid = round(dhtDevice.humidity / 100, 2)  # convert RH from "50%" to "0.50" to match outdoor weather format and work in calculations
         except:
-            logging.info('Error reading Temp-Humid Sensor, retrying...')
+            print('Error reading Temp-Humid Sensor, retrying...')
 
         drybulb.append(temp_drybulb)
         humid.append(temp_humid)
@@ -139,7 +142,7 @@ def get_indoor_light():
             temp_white = light.white
             temp_lux = light.lux
         except:
-            logging.info('Error reading Light Sensor, retrying...')
+            print('Error reading Light Sensor, retrying...')
             continue
 
         white.append(temp_white)
@@ -280,36 +283,33 @@ def verify_db(db_path):
     cur = conn.cursor()
     tables = pd.read_sql_query("SELECT `name` FROM `sqlite_master` WHERE type='table'", conn)
 
-    for tbl in check:
+    for tbl in sys_var.check:
         if tbl in tables.name.values:
-            print('table ' + tbl + ' found, checking values')
             columns = pd.read_sql_query("PRAGMA table_info('" + tbl + "')", conn)
-            for col in check.get(tbl):
+            for col in sys_var.check.get(tbl):
                 if col[0] in columns.name.values:
                     pass
                 elif col[0] == 'index':
                     pass
                 else:
-                    print('Missing ' + col[0] + ', adding to db')
+                    print('Table ' + tbl + 'missing column' + col[0] + ', adding to db')
                     cur.execute('ALTER TABLE ' + str(tbl) + ' ADD COLUMN ' + str(col[0]) + ' ' + col[1])
                     conn.commit()
-            print('table correct')
-            print('\n')
+ 
         else:
             print('missing table: ' + tbl)
             sql = 'create table if not exists ' + tbl + ' ('
-            for i, txt in enumerate(check.get(tbl)):
-                if i == len(check.get(tbl)) - 1:
+            for i, txt in enumerate(sys_var.check.get(tbl)):
+                if i == len(sys_var.check.get(tbl)) - 1:
                     sql = sql + txt[0] + ' ' + txt[1]
                 else:
                     sql = sql + txt[0] + ' ' + txt[1] + ', '
             sql = sql + ')'
-            print(sql)
             conn.execute(sql)
             conn.commit()
 
     conn.close()
-    logging.info('Database ' + db_path + ' verified')
+    print('Database ' + db_path + ' verified')
 
 
 def update_db(db_path, indoor, outdoor):
@@ -451,15 +451,15 @@ def process_daily_outdoor(conn, sql):
     # Create empty dataframe for adding caclulated stats
     day_data = pd.DataFrame(columns=column_list)
 
-    logging.info('current day = ' + datetime.now().strftime("%d"))
+    print('current day = ' + datetime.now().strftime("%d"))
 
     # Loop through each day and calculate stats for each
     for day in set(outdoor.index.day):
 
-        logging.info('processing day '+str(day))
+        print('processing day '+str(day))
 
         if len(outdoor[outdoor.index.day == day].index) > 85:  # Check if data is full 24 hours (or close enough, 90th percentile)
-            logging.info('full day')
+            print('full day')
         #if day != datetime.now().strftime("%d"): # Only process if data collection for the day is over
             d_data = outdoor[outdoor.index.day == day]  # Make working dataframe of only today's data
 
@@ -511,7 +511,7 @@ def process_daily_outdoor(conn, sql):
             day_data = day_data.append(row)
 
         else:
-            logging.info('Partial Day, # of entries = ' + str(len(outdoor[outdoor.index.day == day].index)))
+            print('Partial Day, # of entries = ' + str(len(outdoor[outdoor.index.day == day].index)))
 
     return day_data
 
@@ -540,15 +540,15 @@ def process_daily_indoor(conn, sql):
     # Create empty dataframe for adding caclulated stats
     day_data = pd.DataFrame(columns=column_list)
 
-    logging.info('current day = ' + datetime.now().strftime("%d"))
+    print('current day = ' + datetime.now().strftime("%d"))
 
     # Loop through each day and calculate stats for each
     for month in set(indoor.index.month):
         for day in set(indoor[indoor.index.month == month].index.day):
 
-            logging.info('processing day '+str(day))
+            print('processing day '+str(day))
             if len(indoor[indoor.index.day == day].index) > 85:  # Check if data is full 24 hours (or close enough, 90th percentile)
-                logging.info('full day')
+                print('full day')
             #if str(day) != datetime.now().strftime("%d"): # Only process if data collection for the day is over
 
                 d_data = indoor[indoor.index.day == day]  # Make working dataframe of only today's data
@@ -612,15 +612,15 @@ def process_daily_indoor(conn, sql):
                 day_data = day_data.append(row)
 
             else:
-                logging.info('Partial Day, # of entries = ' + str(len(indoor[indoor.index.day == day].index)))
+                print('Partial Day, # of entries = ' + str(len(indoor[indoor.index.day == day].index)))
 
     # update yesterday section for webpage with last row of processed data
 
     try:
         update_web_vars_daily(row)
     except Exception as e:
-        logging.info('Update Daily Web Vars Failed')
-        logging.info(e)
+        print('Update Daily Web Vars Failed')
+        print(e)
 
     return day_data
 
@@ -651,10 +651,8 @@ def process_yesterday(indoor_yesterday, sunrise, sunset):
                 d_min = indoor_yesterday[column_name].min()
                 d_mean = np.round(indoor_yesterday[column_name].mean(), 2)
                 d_range = np.round(d_max - d_min, 1)
-                print(d_max)
                 max_time_options = indoor_yesterday.date_time[indoor_yesterday[column_name] == d_max]
                 min_time_options = indoor_yesterday.date_time[indoor_yesterday[column_name] == d_min]
-                print(max_time_options)
                 max_time = max_time_options.mean()
                 min_time = min_time_options.mean()
                 period = max_time - min_time
@@ -664,7 +662,6 @@ def process_yesterday(indoor_yesterday, sunrise, sunset):
                     rate = d_range / period
                 else:
                     rate = 0
-                print(max_time)
                 max_time = max_time.strftime('%H:%M:%S')
                 min_time = min_time.strftime('%H:%M:%S')
 
@@ -729,8 +726,8 @@ def update_web_vars_sensor(indoor, outdoor):
 
 def update_web_vars_daily(data):
 
-    logging.info('script started')
-    logging.info(data)
+    print('script started')
+    print(data)
 
     metrics = [
         'drybulb',
@@ -776,11 +773,11 @@ def update_web_vars_daily(data):
                 dict['yesterday_' + i] = data[i]
 
         except Exception as e:
-            logging.info('error writing dictionary')
-            logging.info(e)
+            print('error writing dictionary')
+            print(e)
             dict['yesterday_' + i] = 'n/a'
 
-    logging.info(dict)
+    print(dict)
     s = pd.Series(dict)
     s.to_csv('webpage_daily_data.csv')
 
