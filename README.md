@@ -20,6 +20,7 @@ Here's the basic setup steps:
     pyowm         3.0.0     openweathermap, source for outdoor weather
     matplotlib    3.0.2     creating charts
     flask         1.0.2     basic webserver for python
+    flask_wtf	  0.14.3    flask implementation of WTForms (for new features coming soon!) this should auto-install WTForms as well
 
 
 3. For these two modules, follow the DHT22 setup instructions from adafruit https://learn.adafruit.com/dht-humidity-sensing-on-raspberry-pi-with-gdocs-logging/python-setup
