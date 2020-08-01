@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+</head>
+<body>
+    <h1>Test</h1>
+    <form action="" method="post" autocomplete="off">
+        <table>
+            {% for field in form if field.name != 'csrf_token' %}
+            <tr>
+            <td> {{ field.label() }} </td>
+            <td> {{field() }} </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </form>
+</body>
+</html>

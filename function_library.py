@@ -429,7 +429,6 @@ def read_env_db(db_path):
     cur.close()
     conn.close()
 
-    return
 
 def process_daily_outdoor(conn, sql):
 
@@ -791,16 +790,16 @@ def update_web_charts(db_path):
     last_week = pd.Timestamp.now() - pd.Timedelta('7 days')
     last_week = last_week.round('min')
 
-    # get previous week worth of data for chart
+    # get previous week worth of INDOOR data for chart
     if temp_scale == 'C':
-        sql = 'SELECT date_time, drybulb, rh, vpd, lux FROM indoor_raw WHERE location="' + location + '" AND date_time > datetime("' + str(last_week) + '")'
+        sql = 'SELECT date_time, drybulb, rh, vpd, rh_req_for_vpd, lux FROM indoor_raw WHERE location="' + location + '" AND date_time > datetime("' + str(last_week) + '")'
     elif temp_scale == 'F':
-        sql = 'SELECT date_time, (drybulb * (9.0/5.0)) + 32 as drybulb, rh, vpd, lux FROM indoor_raw WHERE location="' + location + '" AND date_time > datetime("' + str(last_week) + '")'
+        sql = 'SELECT date_time, (drybulb * (9.0/5.0)) + 32 as drybulb, rh, vpd, rh_req_for_vpd, lux FROM indoor_raw WHERE location="' + location + '" AND date_time > datetime("' + str(last_week) + '")'
     indoor = pd.read_sql_query(sql, conn)
     indoor['date_time'] = pd.to_datetime(indoor.date_time)
     indoor.set_index('date_time', inplace=True)
 
-    # get previous week worth of data for chart
+    # get previous week worth of OUTDOOR data for chart
     if temp_scale == 'C':
         sql = 'SELECT date_time, drybulb, rh, vpd FROM outdoor_raw WHERE date_time > datetime("' + str(last_week) + '")'
     elif temp_scale == 'F':
@@ -809,6 +808,8 @@ def update_web_charts(db_path):
     outdoor['date_time'] = pd.to_datetime(outdoor.date_time)
     outdoor.set_index('date_time', inplace=True)
 
+    print('data retrieved, creating charts')
+    print(indoor.tail())
     # create drybulb plot
     fig, ax = plt.subplots(figsize=(15, 5))
     plt.title('Drybulb')
@@ -833,6 +834,7 @@ def update_web_charts(db_path):
     plt.title('Relative Humidity')
     ax.plot(indoor.rh, label='Indoor', alpha=.8)
     ax.plot(outdoor.rh.rolling(4, center=True).mean(), label='Outdoor', alpha=.8)
+    ax.plot(indoor.rh_req_for_vpd, label='Indoor - Required for VPD', linestyle='dashed')
     plt.ylim(0, 1)
     ax.legend()
     #ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
