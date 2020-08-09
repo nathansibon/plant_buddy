@@ -23,20 +23,19 @@ Here's the basic setup steps:
     flask_wtf	  0.14.3    flask implementation of WTForms (for new features coming soon!) this should auto-install WTForms as well
 
 
-3. For these two modules, follow the DHT22 setup instructions from adafruit https://learn.adafruit.com/dht-humidity-sensing-on-raspberry-pi-with-gdocs-logging/python-setup
+3. Here are the libraries you'll need for the sensors.
 
     board         required module for the adafruit_dht library
     adafruit_dht  reads the dht22 temperature and humidity sensor
+    adafruit-circuitpython-veml7700 specific library for the light sensor
 
+4.1 TEMPERATURE/HUMIDITY SENSOR: follow the instructions from adafruit https://learn.adafruit.com/dht-humidity-sensing-on-raspberry-pi-with-gdocs-logging/python-setup. Also hook up the DHT22 sensor per adafruit's instruction. I'm using the 3v power because i may want the 5v for something else later. It still works fine thanks to some error handling/noise reduction in the read code. You may need to edit the pin called in function_library -> get_indoor_weather().  See step 6.d below.
 
-4. Also hook up the DHT22 sensor per adafruit's instruction. I'm using the 3v power because i may want the 5v for something else later. 
-	It still works fine thanks to some error handling/noise reduction in the read code. You may need to edit the pin called in function_library -> get_indoor_weather()
+4.2 LIGHT SENSOR: follow the instructions from adafruit https://learn.adafruit.com/adafruit-veml7700/python-circuitpython also see step 6.d below.
 
-5. Copy all the files to a new directory of your liking. Mine is in a samba shared folder so i can easily access all the files from 
-	my windows laptop but whatever works for you.
+5. Copy all the files to a new directory of your liking. Mine is in a samba shared folder so i can easily access all the files from my windows laptop but whatever works for you.
 
-6. Edit the config.py file. This is where a lot of important user (you) supplied global variables are kept. 
-	These can be edited at any time as you change your setup (such as move to a different room). You'll need to find a few things:
+6. Edit the config.py file. This is where a lot of important user (you) supplied global variables are kept. These can be edited at any time as you change your setup (such as move to a different room). You'll need to find a few things:
 
     a) Sign up for an API key on Openweathermap.org (https://openweathermap.org/api)
 
@@ -44,13 +43,12 @@ Here's the basic setup steps:
 
     c) Find your Pi's serial number, it seems weird now but if you were to use multiple Pi's to measure many places at once this will help you decipher which is which. It's written on the motherboard, or you can do something crazy to get it from the shell (https://raspberrypi.stackexchange.com/questions/2086/how-do-i-get-the-serial-number) or by using the function getserial() in the function_library.py file
 
-    d) In the 'Sensors' dictionary, add your sensors information. This is just a list for yourself, the code doesn't actually reference it in any way but I find it's helpful to have everything in one place. The 'Pin' attribute is whatever the data pin is on your GPIO board (the yellow wire)
+    d) In the 'Sensors' dictionary, add your sensors information (or just change it to anything except 'none' as this is what tells the system to read or not read a sensor). This is just a list for yourself, the code doesn't actually reference it in any way but I find it's helpful to have everything in one place. The 'Pin' attribute is whatever the data pin is on your GPIO board (the yellow wire)
 
     e) The rest of the file should (hopefully) be pretty self explanatory. Feel free to keep track of whatever extra info you'd like here, just make sure you put your notes in as python comments (prefix each line with #) to avoid errors.
 
 
-7. Check that everything is working by running the 'collect data.py' file from the shell. 
-	Errors (if any) will be written to a log file stored in /logs/collect_data.log
+7. Check that everything is working by running the 'collect data.py' file from the shell. Errors (if any) will be written to a log file stored in /logs/collect_data.log
 
 8. Update your Crontab file with the following lines. Open this file by entering 'crontab -e' into the shell. 
 	Be sure to update the path to your directory! 
