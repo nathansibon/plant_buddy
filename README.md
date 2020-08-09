@@ -14,20 +14,20 @@ Here's the basic setup steps:
 
 2. Install any of the following missing modules (I've noted my current version for troubleshooting purposes):
 
-    pandas        1.0.3     data analysis
-    sqlite3       ?         database reading/writing
-    numpy         1.16.2    calculations
-    pyowm         3.0.0     openweathermap, source for outdoor weather
-    matplotlib    3.0.2     creating charts
-    flask         1.0.2     basic webserver for python
-    flask_wtf	  0.14.3    flask implementation of WTForms (for new features coming soon!) this should auto-install WTForms as well
+    	pandas        1.0.3     data analysis
+    	sqlite3       ?         database reading/writing
+    	numpy         1.16.2    calculations
+    	pyowm         3.0.0     openweathermap, source for outdoor weather
+    	matplotlib    3.0.2     creating charts
+    	flask         1.0.2     basic webserver for python
+    	flask_wtf	  0.14.3    flask implementation of WTForms (for new features coming soon!) this should auto-install WTForms as well
 
 
 3. Here are the libraries you'll need for the sensors.
 
-    board         required module for the adafruit_dht library
-    adafruit_dht  reads the dht22 temperature and humidity sensor
-    adafruit-circuitpython-veml7700 specific library for the light sensor
+    	board         required module for the adafruit_dht library
+    	adafruit_dht  reads the dht22 temperature and humidity sensor
+    	adafruit-circuitpython-veml7700 specific library for the light sensor
 
 4.1 TEMPERATURE/HUMIDITY SENSOR: follow the instructions from adafruit https://learn.adafruit.com/dht-humidity-sensing-on-raspberry-pi-with-gdocs-logging/python-setup. Also hook up the DHT22 sensor per adafruit's instruction. I'm using the 3v power because i may want the 5v for something else later. It still works fine thanks to some error handling/noise reduction in the read code. You may need to edit the pin called in function_library -> get_indoor_weather().  See step 6.d below.
 
