@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% set active_page = "sql_query" %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <div class="row py-2">
+        <a href="{{ url_for('sql_db_select') }}" class="btn btn-primary">New Query</a>
+    </div>
+    <div class="row pb-2">
+        <h5>Database: {{ database }} </h5>
+   </div>
+   <div class="row pb-2">
+        <h5>Query:    {{ query }} </h5>
+    </div>
+</div>
+<table class="table table-striped sticky-header">
+    <thead>
+        {% for col in columns %}
+            <th>{{ col }}</th>
+        {% endfor %}
+    </thead>
+    <tbody>
+        {% for row in rows %}
+            <tr>
+                {% for item in row  %}
+                <td> {{ item }} </td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% set active_page = "data_analysis" %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <div class="row justify-content-start">
+        <div class="col">
+            <h4 class="mb-3 text-secondary">Select database to query</h4>
+        </div>
+    </div>
+    <div class="row justify-content-start">
+        <div class="col-3">
+            <form action="" method="post" autocomplete="off">
+                    <p>{{ form.database(class="form-control") }}</p>
+                    <p>{{ form.submit(class="btn btn-primary") }}</p>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

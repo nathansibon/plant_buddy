@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% set active_page = "sql_query" %}
+
+{% block content %}
+
+<div class="container-fluid ml-2">
+  <div class="row">
+    <ul class="list-group">
+        <li class="list-group-item active">Table Options:</li>
+        {% for item in tables %}
+        <li class="list-group-item">{{ item }}</li>
+        {% endfor %}
+    </ul>
+  </div>
+  <div class="row mt-3">
+    <form action="" method="post" autocomplete="off">
+        <p> {{ form.sql(class="form-control") }} </p>
+        <p>{{ form.submit(class="btn btn-primary") }}
+        <a href="{{ url_for('sql_db_select') }}" class="btn btn-outline-secondary">Change Database</a></p>
+    </form>
+  </div>
+  <div class="row mt-3">
+    <p class="font-weight-light">Note: for data selection only, doesn't support commands like "drop table". This is for your own good.</p>
+  </div>
+</div>
+
+
+{% endblock %}

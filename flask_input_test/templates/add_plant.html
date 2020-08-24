@@ -1,25 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Add New Plant</title>
-</head>
-<body>
-    <h1>Add New Plant</h1>
-    <form action="" method="post" autocomplete="off">
-        <table>
-            {% for field in form if (field.name != 'csrf_token') and (field.name != 'submit') %}
-            <tr>
-            <td> {{ field.label() }} </td>
-            <td> {{field() }} </td>
-            </tr>
-            {% endfor %}
-            <tr>
-                <td></td>
-                <td></td>
-                <td>{{ form.submit() }}</td>
-            </tr>
-        </table>
+{% extends "base.html" %}
+{% set active_page = "my_plants" %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <h4 class="mb-3 text-secondary">Add new plant to collection</h4>
+
+<!-- TODO add code and bootstrap alert to check for duplicate name in database -->
+
+    <form method="post" autocomplete="off" enctype="multipart/form-data">
+        {% for field in form if (field.name != 'csrf_token') and (field.name != 'submit') and (field.name != 'pic') %}
+        <div class="form row">
+            <div class="col"><label class="form-label">{{ field.label() }}</label></div>
+            <div class="col">{{ field(class="form-control") }}</div>
+        </div>
+        {% endfor %}
+        <div class="form row">
+            <div class="col"><label class="form-label">Upload Picture</label></div>
+            <div class="col"><input type="file" class="file-input" name="pic" accept="image/*" /></div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm">{{ form.submit(class="btn btn-primary") }}</div>
+        </div>
     </form>
-</body>
-</html>
+</div>
+
+{% endblock %}

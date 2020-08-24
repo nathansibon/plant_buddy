@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% set active_page = "index" %}
+
+{% block content %}
+
+<!-- TODO update data card alignment -->
+
+<div class="container">
+    <div class="jumbotron">
+        <h1 class="display-5">{{ p[1] }}</h1>
+        <p class="lead">{{ p[2] }}</p>
+        <hr class="my-4">
+        <table cellpadding="8">
+        <tr>
+            <td class="font-weight-bold">Location:</td>
+            <td>{{ p[3] }}</td>
+        </tr><tr>
+            <td class="font-weight-bold">Substrate:</td>
+            <td>{{ p[8] }}</td>
+        </tr><tr>
+            <td class="font-weight-bold">Watering Schedule:</td>
+            <td>{{ p[6] }} days</td>
+        </tr><tr>
+            <td class="font-weight-bold">Last Watered on:</td>
+            <td>{{ p[7] }}</td>
+        </tr><tr>
+            <td class="font-weight-bold">Pot Size:</td>
+            <td>{{ p[9] }}</td>
+        </tr>
+        </table>
+    </div>
+</div>
+
+<div class="container-fluid" id="body grid">
+<div class="container pb-4">
+    <div class="col">
+        <div class="row">
+            <!-- Drybulb -->
+            <div class="col col-xs-12 col-sm-6 col-md-3">
+                <div class="card" style="width: 14rem;">
+                    <div class="container bg-primary text-white">
+                        <div class="row mt-3 mb-3 align-items-center">
+                            <div class="col"><h4 class="">Drybulb</h4></div>
+                            <div class="col"><img class="mx-auto d-block" src="/static/icon-drybulb.png" height="40"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                            <div class="row">
+                                <div class="col">Mean:</div>
+                                <div class="col text-right">{{ data['drybulb_mean'] }} °C</div>
+                            </div>
+                            </li>
+                            <li class="list-group-item">
+                            <div class="row">
+                                <div class="col">Max:</div>
+                                <div class="col text-right">{{ data['drybulb_max'] }} °C</div>
+                            </div>
+                            </li>
+                            <li class="list-group-item">
+                            <div class="row">
+                                <div class="col">Q 90%:</div>
+                                <div class="col text-right">{{ data['drybulb_q_90'] }} lux</div>
+                            </div>
+                            </li>
+                            <li class="list-group-item">
+                            <div class="row">
+                                <div class="col">Q 10%:</div>
+                                <div class="col text-right">{{ data['drybulb_q_10'] }} lux</div>
+                            </div>
+                            </li>
+                            <li class="list-group-item">
+                            <div class="row">
+                                <div class="col">Min:</div>
+                                <div class="col text-right">{{ data['drybulb_min'] }} °C</div>
+                            </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- RH -->
+            <div class="col col-xs-12 col-sm-6 col-md-3">
+                <div class="card" style="width: 14rem;">
+                    <div class="container bg-primary text-white">
+                        <div class="row mt-3 mb-3 align-items-center">
+                            <div class="col"><h4 class="">Humidity</h4></div>
+                            <div class="col"><img class="mx-auto d-block" src="/static/icon-rh.png" height="38"></div>
+                        </div>
+                    </div>
+                    <div class="">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                            <div class="row">
+                                <div class="col">Mean:</div>
+                                <div class="col text-right">{{ data['rh_mean'] }}%</div>
+                            </div>
+                            </li>
+                            <li class="list-group-item">
+                            <div class="row">
+                                <div class="col">Max:</div>
+                                <div class="col text-right">{{ data['rh_max'] }}%</div>
+                            </div>
+                            <li class="list-group-item">
+                            <div class="row">
+                                <div class="col">Q 90%:</div>
+                                <div class="col text-right">{{ data['rh_q_90'] }} lux</div>
+                            </div>
+                            </li>
+                            <li class="list-group-item">
+                            <div class="row">
+                                <div class="col">Q 10%:</div>
+                                <div class="col text-right">{{ data['rh_q_10'] }} lux</div>
+                            </div>
+                            </li>
+                            </li>
+                            <li class="list-group-item">
+                            <div class="row">
+                                <div class="col">Min:</div>
+                                <div class="col text-right">{{ data['rh_min'] }}%</div>
+                            </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- VPD -->
+            <div class="col col-xs-12 col-sm-6 col-md-3">
+                <div class="card" style="width: 14rem;">
+                    <div class="container bg-primary text-white">
+                        <div class="row mt-3 mb-3 align-items-center">
+                            <div class="col"><h4 class="">VPD</h4></div>
+                            <div class="col"><img class="mx-auto d-block" src="/static/icon-vpd.png" height="40"></div>
+                        </div>
+                    </div>
+                    <div class="">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                            <div class="row">
+                                <div class="col">Mean:</div>
+                                <div class="col text-right">{{ data['vpd_mean'] }} kPa</div>
+                            </div>
+                            </li>
+                            <li class="list-group-item">
+                            <div class="row">
+                                <div class="col">Max:</div>
+                                <div class="col text-right">{{ data['vpd_max'] }} kPa</div>
+                            </div>
+                            <li class="list-group-item">
+                            <div class="row">
+                                <div class="col">Q 90%:</div>
+                                <div class="col text-right">{{data['vpd_q_90'] }} lux</div>
+                            </div>
+                            </li>
+                            <li class="list-group-item">
+                            <div class="row">
+                                <div class="col">Q 10%:</div>
+                                <div class="col text-right">{{ data['vpd_q_10'] }} lux</div>
+                            </div>
+                            </li>
+                            </li>
+                            <li class="list-group-item">
+                            <div class="row">
+                                <div class="col">Min:</div>
+                                <div class="col text-right">{{ data['vpd_min'] }} kPa</div>
+                            </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- Lux -->
+            <div class="col col-xs-12 col-sm-6 col-md-3">
+                <div class="card" style="width: 14rem;">
+                    <div class="container bg-primary text-white">
+                        <div class="row mt-3 mb-3 align-items-center">
+                            <div class="col"><h4 class="">Light</h4></div>
+                            <div class="col"><img class="mx-auto d-block" src="/static/icon-lux.png" height="40"></div>
+                        </div>
+                    </div>
+                    <div class="">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                            <div class="row">
+                                <div class="col">Mean:</div>
+                                <div class="col text-right">{{ data['lux_mean'] }} lux</div>
+                            </div>
+                            </li>
+                            <li class="list-group-item">
+                            <div class="row">
+                                <div class="col">Max:</div>
+                                <div class="col text-right">{{ data['lux_max'] }} lux</div>
+                            </div>
+                            </li>
+                            <li class="list-group-item">
+                            <div class="row">
+                                <div class="col">Q 90%:</div>
+                                <div class="col text-right">{{ data['lux_q_90'] }} lux</div>
+                            </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+</div>
+{% endblock %}

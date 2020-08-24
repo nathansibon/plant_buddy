@@ -1,24 +1,51 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Edit Plant</title>
-</head>
-<body>
-    <h1>Edit Plant #{{ id }} {{ row[1] }}</h1>
-    <form action="" method="post" autocomplete="off">
-        <table>
-            {% for field in form if (field.name != 'csrf_token') and (field.name != 'submit') %}
-            <tr>
-                <td> {{ field.label() }} </td>
-                <td> {{ field(value=row[loop.index]) }} </td>
-            </tr>
-            {% endfor %}
-            <tr>
-                <td></td>
-                <td>{{ form.submit() }}</td>
-            </tr>
-        </table>
+{% extends "base.html" %}
+{% set active_page = "my_plants" %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <h4 class="mb-3 text-secondary">Edit Plant #{{ id }} {{ row[1] }}</h4>
+
+    <form method="post" autocomplete="off" enctype="multipart/form-data">
+        {% for field in form if (field.name != 'csrf_token') and (field.name != 'submit') %}
+            <div class="form row">
+                <div class="col"><label class="form-label"> {{ field.label() }} </label></div>
+                <div class="col"> {{ field(class="form-control") }} </div>
+            </div>
+        {% endfor %}
+        <div class="form row">
+            <div class="col"><label class="form-label">Upload Picture (overwrites old pic)</label></div>
+            <div class="col"><input type="file" class="file-input" name="pic" accept="image/*" /></div>
+        </div>
+        <div class="row">
+            <div class="col-sm">{{ form.submit(class="btn btn-primary") }}</div>
+        </div>
     </form>
-</body>
-</html>
+
+    <div class="row mt-2 pl-3">
+        <a class="btn btn-outline-danger" data-toggle="modal" data-target="#delete">Delete Plant</a>
+    </div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="delete" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog " role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Are you sure?</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+          <p>Deleting a plant cannot be undone!</p>
+          <p>Are you sure you want to continue?</p>
+          <a class="btn btn-danger" href="{{ url_for('del_my_plant', id=id, p_name=row[1]) }}">Confirm Delete Plant</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
