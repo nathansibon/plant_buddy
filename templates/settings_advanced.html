@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% set active_page = "system" %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <h4 class="mb-3 text-secondary">Change System Settings (Advanced)</h4>
+
+    <form method="post" autocomplete="off" enctype="multipart/form-data">
+        {% for field in form if (field.name != 'csrf_token') and (field.name != 'submit') and (field.type != 'BooleanField') %}
+        <div class="form row">
+            <div class="col"><label class="form-label">{{ field.label() }}</label></div>
+            <div class="col">{{ field(class="form-control", value=current[loop.index - 1]) }}</div>
+        </div>
+        {% endfor %}
+        <div class="form-check">
+        {% for field in form if (field.type == 'BooleanField') %}
+            <div class="row pl-3">
+                {{ field(class="form-check-input") }}
+                {{ field.label() }}
+            </div>
+        {% endfor %}
+        </div>
+        <div class="row">
+            <div class="col-sm">{{ form.submit(class="btn btn-primary") }}</div>
+        </div>
+    </form>
+    <a href="{{ url_for('settings_basic') }}" class="btn btn-outline-secondary mt-2">Back to Basic Settings</a>
+</div>
+
+{% endblock %}

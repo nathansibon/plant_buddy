@@ -1,9 +1,11 @@
 # Master list of high-level variables, for admin use only
 
+# ----------- Datalogger Tables -----------
+
 indoor_raw = [['id', 'integer primary key'],
  ['date_time', 'timestamp'],
- ['pi_serial', 'varchar(765)'],
- ['location', 'varchar(765)'],
+ ['pi_serial', 'text'],
+ ['location', 'text'],
  ['drybulb', 'real'],
  ['rh', 'real'],
  ['wetbulb', 'real'],
@@ -83,7 +85,7 @@ outdoor_raw = [['id', 'integer primary key'],
  ['clouds', 'real'],
  ['rain', 'real'],
  ['wind', 'real'],
- ['status', 'varchar(765)'],
+ ['status', 'text'],
  ['sunrise', 'timestamp'],
  ['sunset', 'timestamp'],
  ['wetbulb', 'real'],
@@ -157,9 +159,52 @@ outdoor_day = [['index', 'DATE'],
  ['vpd_mean', 'REAL'],
  ['sun', 'REAL']]
 
-check = {
+check_datalogger = {
     'indoor_raw': indoor_raw,
     'indoor_day': indoor_day,
     'outdoor_raw': outdoor_raw,
     'outdoor_day': outdoor_day,
+}
+
+
+# ----------- Webserver Tables -----------
+
+houseplants = [
+ ['name', 'text'],                      # 1
+ ['species', 'text'],                   # 2
+ ['location', 'text'],                  # 3
+ ['purchased_from', 'text'],            # 4
+ ['purchase_date', 'timestamp'],        # 5
+ ['water_schedule_in_days', 'integer'], # 6
+ ['last_watered', 'timestamp'],         # 7
+ ['substrate', 'text'],                 # 8
+ ['pot_size', 'real'],                  # 9
+ ['leaf_temp_offset', 'integer'],       # 10
+ ['pic_path', 'text'],                  # 11
+ ['has_pic', 'smallint'],               # 12
+ ['days_since_last_water', 'integer'],  # 13
+ ['need_water', 'smallint'],            # 14
+ ['water_warning', 'smallint'],         # 15
+ ['ignore', 'smallint'],                # 16
+ ['death', 'smallint'],                 # 17
+ ['last_repot_date', 'timestamp']       # 18
+]
+
+my_journal = [
+ ['date', 'timestamp'],                 # 1
+ ['title', 'text'],             # 2
+ ['plant', 'text'],             # 3
+ ['body', 'text'],                      # 4
+ ['has_pic', 'smallint'],               # 5
+ ['pic_path', 'text']          # 6
+]
+
+other_locations = [
+ ['name', 'text']
+]
+
+check_webserver = {
+    'houseplants': houseplants,
+    'my_journal': my_journal,
+    'other_locations': other_locations
 }

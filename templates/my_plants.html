@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% set active_page = "my_plants" %}
+
+{% block content %}
+
+<div class="container float-left" style="padding-bottom: 15px; padding-top: 10px;">
+    <a class="btn btn-primary mt-2" href="{{ url_for('add_plant') }}">New plant</a>
+    <a class="btn btn-success mt-2" href="{{ url_for('water_all') }}">Water All Plants</a>
+    <a class="btn btn-outline-secondary mt-2" data-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
+        More Detail
+    </a>
+    <div class="collapse" id="collapseExample">
+      <div class="container mt-2">
+          <p>Rotate phone to landscape or view on tablet/desktop for more basic info.
+                  Or press the button below for all available info</p>
+          <p><a class="btn btn-outline-secondary" href="{{ url_for('my_plants_detailed') }}">Show All Fields</a></p>
+          <p><img src="/static/my_plants_timeline.png" class="img-fluid"></p>
+      </div>
+    </div>
+
+
+    <!-- thanks to https://www.w3schools.com/booTsTrap/bootstrap_filters.asp -->
+    <input class="form-control mt-2" id="filterIn" type="text" placeholder="Filter...">
+</div>
+
+<table class="table table-striped sticky-header">
+    <thead>
+        <tr>
+            <th><!--<a href="" class=""><img src="/static/icon-watered.png" class="rounded p-1 bg-success" height="30"></a>--></th>
+            <th></th>
+            <th scope="col" class="d-none d-sm-table-cell">Name</th> <!--d-none d-sm-table-cell hides these elements on xs screens for better mobile viewing-->
+            <th scope="col" class="d-none d-sm-table-cell">Species</th>
+            <th scope="col" class="d-none d-sm-table-cell">Location</th>
+            <th scope="col" class="d-none d-sm-table-cell">Watering Schedule (days)</th>
+            <th scope="col" class="d-none d-sm-table-cell">Last Watered</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody id="table"><!-- TODO "ignore" & "died" buttons -->
+        {% for item in rows %}
+            <tr>
+                <td><a href="{{ url_for('water_one_plant', id=item[0]) }}" class=""><img src="/static/icon-watered.png" class="rounded p-1
+                    {% if item[14] == 1 %}
+                    bg-danger
+                    {% elif item[15] == 1 %}
+                    bg-warning
+                    {% else %}
+                    bg-success
+                    {% endif %}
+                    " height="30"></a></td>
+                <td>
+                    {% if item[11] != 'none'%}
+                    <img src="/static/{{ item[11] }}" height="40" data-toggle="modal" data-target="#{{ item[1].replace(' ','') }}"> <!--a plant name might include a space, which would break the link to modal. replace() removes the space-->
+                    {% endif %}
+                </td>
+                <td> {{ item[1] }} </td>
+                <td scope="col" class="d-none d-sm-table-cell"> {{ item[2] }} </td>
+                <td scope="col" class="d-none d-sm-table-cell"> {{ item[3] }} </td>
+                <td scope="col" class="d-none d-sm-table-cell"> {{ item[6] }} </td>
+                <td scope="col" class="d-none d-sm-table-cell"> {{ item[7] }} </td>
+                <td><a href="{{ url_for('edit_plant', id=item[0]) }}" class="btn btn-sm btn-outline-secondary" >Edit</a></td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% for item in rows if item[11] != 'none' %}
+<!-- Modal -->
+<div class="modal fade" id="{{ item[1].replace(' ','') }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog " role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">{{ item[1] }}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <img class="img-fluid" src="/static/{{ item[11] }}">
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<script>
+$(document).ready(function(){
+  $("#filterIn").on("keyup", function() {
+    var value = $(this).val().toLowerCase();
+    $("#table tr").filter(function() {
+      $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+    });
+  });
+});
+</script>
+
+{% endblock %}

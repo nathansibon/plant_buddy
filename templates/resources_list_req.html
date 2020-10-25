@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% set active_page = "resources" %}
+
+
+{% block content %}
+
+<div class="container-fluid" style="padding-bottom: 15px; padding-top: 10px;">
+    <a class="btn btn-primary" href="{{ url_for('resources_add_req_plant') }}">New Requirement</a>
+
+    <p class="text-secondary mt-2">
+        <small>
+            Info from guidance by
+            <a href="https://extension.uga.edu/about/personnel-directory/person.html?pk_id=6328&name=Bodie+V.+Pennisi">Prof. Bodie V. Pennisi</a>,
+            <a href="https://extension.uga.edu/publications/detail.html?number=B1318&title=Growing%20Indoor%20Plants%20with%20Success">published by the UofG Ext.</a>
+        </small>
+    </p>
+
+</div>
+
+<table class="table table-sm table-striped sticky-header">
+        <thead>
+        <tr>
+            {% for item in columns %}
+            <th> {{ item[1] }} </th>
+            {% endfor %}
+        </tr>
+        </thead>
+    <tbody id="table">
+        {% for row in rows %}
+            <tr>
+                {% for item in row  %}
+                <td> {{ item }} </td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

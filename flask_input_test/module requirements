@@ -1,8 +1,0 @@
-flask 1.1.2
-jinja2 2.11.1 (comes with flask)
-Werkzeug 1.0.1 (comes with flask) 
-flask_wtf 0.14.3
-wtforms (comes with flask_wtf)
-sqlite3 
-pandas 1.0.3
-numpy 1.18.4

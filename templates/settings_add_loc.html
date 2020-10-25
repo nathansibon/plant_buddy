@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% set active_page = "system" %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <h4 class="mb-3 text-secondary">Add new non-plant location</h4>
+
+    <form method="post" autocomplete="off" enctype="multipart/form-data">
+          <div class="form row">
+          {% for field in form if (field.name != 'csrf_token') and (field.name != 'submit') %}
+                <div class="col"><label class="form-label">{{ field.label() }}</label></div>
+                <div class="col">{{ field(class="form-control") }}</div>
+          {% endfor %}
+          <div class="col-sm">{{ form.submit(class="btn btn-primary") }}</div>
+          </div>
+    </form>
+</div>
+
+{% endblock %}

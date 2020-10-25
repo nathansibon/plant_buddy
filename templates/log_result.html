@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% set active_page = "system" %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <a id="top"></a>
+
+    <div class="row pt-2 align-middle">
+        <div class="col">
+            <h4>{{ file }}</h4>
+        </div>
+        <div class="col">
+            <a href="#bottom" class="btn btn-outline-secondary">Jump to Bottom</a>
+            <a href="{{ url_for('log_select') }}" class="btn btn-outline-secondary">Change Log</a>
+            <a href="{{ url_for('log_clear', file=file) }}" class="btn btn-danger">Clear Log</a>
+        </div>
+    </div>
+    <hr>
+    {% for row in result %}
+        <div class="row mx-2">
+            {{ row }}
+        </div>
+    {% endfor %}
+
+    <a id="bottom"></a>
+
+    <hr>
+
+    <a href="#top" class="btn btn-outline-secondary mb-2">Jump to Top</a>
+
+</div>
+
+{% endblock %}

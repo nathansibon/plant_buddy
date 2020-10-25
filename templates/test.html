@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% set active_page = "test" %}
+
+{% block content %}
+
+<a href="#" data-toggle="tooltip" title="Hooray!">Hover over me</a>
+
+    <!-- Bootstrap Tooltip Toggle -->
+    <script>
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+        })
+    </script>
+
+{% endblock %}

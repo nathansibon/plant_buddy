@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% set active_page = "resources" %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <h3 class="display-5 text-center pb-4">Soil Mix Types</h3>
+        <p class="text-center text-secondary">
+            <small>
+                Info from guidance by
+                <a href="https://extension.uga.edu/about/personnel-directory/person.html?pk_id=6328&name=Bodie+V.+Pennisi">Prof. Bodie V. Pennisi</a>,
+                <a href="https://extension.uga.edu/publications/detail.html?number=B1318&title=Growing%20Indoor%20Plants%20with%20Success">published by the UofG Ext.</a>
+            </small>
+        </p>
+
+    <div class="card-group justify-content-around">
+        <!-- Flowering Houseplants -->
+        <div class="card mx-5">
+            <div class="container bg-primary text-white">
+                <div class="row my-3">
+                    <div class="col"><h4 class="pt-1">Flowering Houseplants</h4></div>
+                    <!--<div class="col"><img class="float-right" src="/static/icon-drybulb.png" height="40"></div>-->
+                </div>
+            </div>
+            <div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">1x Garden Loam or Potting Soil</li>
+                    <li class="list-group-item">1x Sand, Perlite, or Vemiculite</li>
+                    <li class="list-group-item">1x Peat Moss</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Foliage Plants -->
+        <div class="card mx-5">
+            <div class="container bg-primary text-white">
+                <div class="row my-3">
+                    <div class="col"><h4 class="pt-1">Foliage Plants</h4></div>
+                    <!--<div class="col"><img class="float-right" src="/static/icon-drybulb.png" height="40"></div>-->
+                </div>
+            </div>
+            <div class="card-body text-secondary">3 Options:</div>
+            <div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">1x garden loam or potting soil + 1x sand OR 2x peat moss</li>
+                    <li class="list-group-item">1x pine bark + 2x peat moss</li>
+                    <li class="list-group-item">Equal amounts of sand/pine bark/peat moss</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

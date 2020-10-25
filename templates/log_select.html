@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% set active_page = "system" %}
+
+{% block content %}
+
+<div class="container ml-1">
+
+    <div class="row">
+        <div class="col">
+            <h4 class="mb-3 text-secondary">Select log file</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-3">
+            <form action="" method="post" autocomplete="off">
+                    <p>{{ form.log(class="form-control") }}</p>
+                    <p>{{ form.submit(class="btn btn-primary") }}</p>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
