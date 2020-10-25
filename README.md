@@ -19,8 +19,9 @@ Here's the basic setup steps:
     	numpy         1.16.2    calculations
     	pyowm         3.0.0     openweathermap, source for outdoor weather
     	matplotlib    3.0.2     creating charts
-    	flask         1.0.2     basic webserver for python
-    	flask_wtf	  0.14.3    flask implementation of WTForms (for new features coming soon!) this should auto-install WTForms as well
+    	PIL	      1.1.6	image manipulation
+		flask         1.0.2     basic webserver for python
+    	flask_wtf.    0.14.3    flask implementation of WTForms (for new features coming soon!) this should auto-install WTForms as well
 
 
 3. Here are the libraries you'll need for the sensors.
@@ -33,9 +34,11 @@ Here's the basic setup steps:
 
 4.2 LIGHT SENSOR: follow the instructions from adafruit https://learn.adafruit.com/adafruit-veml7700/python-circuitpython also see step 6.d below.
 
+4.3 SOIL MOISTURE PROBE: Coming soon!
+
 5. Copy all the files to a new directory of your liking. Mine is in a samba shared folder so i can easily access all the files from my windows laptop but whatever works for you.
 
-6. Edit the config.py file. This is where a lot of important user (you) supplied global variables are kept. These can be edited at any time as you change your setup (such as move to a different room). You'll need to find a few things:
+6. System settings are now editable from the webserver under System -> Settings -> Advanced Settings (button). You'll need to find a few things:
 
     a) Sign up for an API key on Openweathermap.org (https://openweathermap.org/api)
 
@@ -43,30 +46,34 @@ Here's the basic setup steps:
 
     c) Find your Pi's serial number, it seems weird now but if you were to use multiple Pi's to measure many places at once this will help you decipher which is which. It's written on the motherboard, or you can do something crazy to get it from the shell (https://raspberrypi.stackexchange.com/questions/2086/how-do-i-get-the-serial-number) or by using the function getserial() in the function_library.py file
 
-    d) In the 'Sensors' dictionary, add your sensors information (or just change it to anything except 'none' as this is what tells the system to read or not read a sensor). This is just a list for yourself, the code doesn't actually reference it in any way but I find it's helpful to have everything in one place. The 'Pin' attribute is whatever the data pin is on your GPIO board (the yellow wire)
+    d) In the 'Sensors' section at the end, check the box for the sensors you've installed. Uncheck all if you're just using this as a watering/plant tracker
 
     e) The rest of the file should (hopefully) be pretty self explanatory. Feel free to keep track of whatever extra info you'd like here, just make sure you put your notes in as python comments (prefix each line with #) to avoid errors.
-
+    
 
 7. Check that everything is working by running the 'collect data.py' file from the shell. Errors (if any) will be written to a log file stored in /logs/collect_data.log
 
 8. Update your Crontab file with the following lines. Open this file by entering 'crontab -e' into the shell. 
-	Be sure to update the path to your directory! 
+	Be sure to update the path to your directory! Also recall that cron has a different default python, so you need to specify python 3.
 	This will run the collect_data script every 15 mins, and the process_daily script once a day just after midnight. 
 	For more info on using crontab and syntax (https://crontab.guru/)
 	The section after >> is the location of the log file. you can skip this i suppose but it makes any troubleshooting down the road a lot easier.
+	Again, if you're just using this as a plant/watering tracker then don't add the collect data, BUT DO ADD PROCESS DAILY since this updates watering
 
-    	*/15 * * * * /usr/bin/python3 /home/pi/share/env_datalogger/collect_data.py >> /home/pi/share/env_datalogger/logs/collect_data.log
-    	10 0 * * * /usr/bin/python3 /home/pi/share/env_datalogger/process_daily.py >> /home/pi/share/env_datalogger/logs/process_daily.log
+		@reboot /usr/bin/python3 /home/pi/share/plant_monitor/webserver.py & >> /home/pi/share/plant_monitor/logs/auto_flask.log 2>&1
+		*/15 * * * * /usr/bin/python3 /home/pi/share/plant_monitor/collect_data.py >> /home/pi/share/plant_monitor/logs/collect_data.log 2>&1
+		10 0 * * * /usr/bin/python3 /home/pi/share/plant_monitor/process_daily.py >> /home/pi/share/plant_monitor/logs/process_daily.log 2>&1
+	
+	be sure to save your edits when exiting! (ctrl+x, then y)
 
-9. Start the Flask webserver. The most reliable way I've found for a headless Pi setup (i.e. no monitor keyboard or mouse connected) is by setting up a VNC connection 
+9. There are two ways to start the webserver, I suggest method 1
+
+9.1 Reboot your pi. Cron will automatically boot the flask server (@reboot command above) 
+
+9.2 Start the Flask webserver. The most reliable way I've found for a headless Pi setup (i.e. no monitor keyboard or mouse connected) is by setting up a VNC connection 
 	(start at step 10 https://desertbot.io/blog/headless-raspberry-pi-4-remote-desktop-vnc-setup) and running the script from a new shell window (do not close the window)
 	You can also look into writing a custom daemon to wrap the webserver script (good luck) or using other methods from an SSH shell like 'nohup' or 'screen' 
 	but i didn't seem to have great luck there and makes it hard to troubleshoot errors when the server crashes from an error.
-	
-	9.1 another way to auto-start the flask server at boot (that's working for me so far...) is to add another line to your Crontab file. Good for power outages etc.
-	
-		@reboot /usr/bin/python3 /home/pi/share/env_datalogger/webserver.py &
 
 10. When flask starts, you'll see both the port you'll need to access the data webpage
 
@@ -77,7 +84,7 @@ Here's the basic setup steps:
 
 12. Open your webbrowser on your phone/laptop/whatever and navigate to the address and port of your pi's webserver (e.x. 192.168.0.1:5000). 
 	Bookmark this page for easy access.
+	
+13. Add plants to your collection in the My Plants section, you can then select the plant your pi is currently monitoring from the System menu. Or you can add a "non-plant" location from the base system menu.
 
-
-
-that's it! so far...
+Explore the rest! I don't feel particularly motivated to write a complete doc for the website at this point, but hopefully it's designed in a fairly self-explanatory way!
