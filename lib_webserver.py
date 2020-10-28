@@ -471,16 +471,13 @@ def del_plant_image(plant_name):
 
 
 def get_all_plant_data(database, plant):
-    import \
-        sqlite3 as sql  # i have no idea why this is needed given global import above, but python gave a 'referenced before assignment' error without it...
     cols = ['drybulb', 'rh', 'vpd', 'lux']
 
     con = sql.connect(database + '_data.db')
-    cur = con.cursor()
 
-    sql = 'SELECT * FROM indoor_raw WHERE location="' + str(plant) + '"'
-    print(sql)
-    raw_data = pd.read_sql_query(sql, con)
+    q = 'SELECT * FROM indoor_raw WHERE location="' + str(plant) + '"'
+    print(q)
+    raw_data = pd.read_sql_query(q, con)
     print(raw_data)
     result = {}
 
@@ -490,6 +487,7 @@ def get_all_plant_data(database, plant):
         result[str(i + '_min')] = np.round(raw_data[i].min(), 1)
         result[str(i + '_q_10')] = np.round(raw_data[i].quantile(0.1), 1)
         result[str(i + '_q_90')] = np.round(raw_data[i].quantile(0.9), 1)
+    result['count'] = raw_data['location'].count()
 
     return result
 

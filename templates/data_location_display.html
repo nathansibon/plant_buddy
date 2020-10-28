@@ -1,14 +1,16 @@
 {% extends "base.html" %}
-{% set active_page = "index" %}
+{% set active_page = "data_analysis" %}
 
 {% block content %}
 
 <div class="container">
+{% if is_plant == 1 %}
     <div class="jumbotron">
         <div class="row">
             <div class="col">
                 <h1 class="display-5">{{ p[1] }}</h1>
                 <p class="lead">{{ p[2] }}</p>
+                <p class="lead">{{ data['count'] }} records</p>
             </div>
             <div class="col d-flex justify-content-center">
                 <img src="/static/{{ p[11] }}" width="100" class="align-middle img-fluid">
@@ -34,8 +36,16 @@
         </tr>
         </table>
     </div>
+{% endif %}
+{% if is_other == 1 %}
+    <div class="jumbotron">
+        <h1 class="display-5">{{ p }}</h1>
+        <p class="lead">{{ data['count'] }} records</p>
+    </div>
+{% endif %}
 </div>
 
+{% if (is_plant == 1 or is_other == 1) %}
 <div class="container-fluid mb-3" id="body grid">
     <div class="card-group justify-content-around">
 
@@ -196,5 +206,6 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 {% endblock %}

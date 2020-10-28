@@ -7,15 +7,13 @@ from pytz import all_timezones
 from time import sleep
 from configparser import ConfigParser
 
-
 abspath = path.abspath(__file__)
 dname = path.dirname(abspath)
 chdir(dname)
 cp = ConfigParser()
 cp.read('config.ini')
 
-
-app = Flask(__name__) # application 'app' is object of class 'Flask'
+app = Flask(__name__)  # application 'app' is object of class 'Flask'
 
 letters = string.ascii_lowercase
 app.config['SECRET_KEY'] = (''.join(random.choice(letters) for i in range(10)))
@@ -23,13 +21,13 @@ app.config['SECRET_KEY'] = (''.join(random.choice(letters) for i in range(10)))
 verify_db(cp['g']['plant_db_path'] + 'my_plants.db')
 img_directory = 'my_plant_images'
 
-#-----------------------------------------------------------------------------------------------------------#
+
+# -----------------------------------------------------------------------------------------------------------#
 
 # TODO add badge to "my plants" nav when plants need to be watered?
 
 @app.route('/')  # root : main page
 def index():
-
     f_name = cp['g']['name'].replace('_', ' ')
     f_location = cp['g']['location'].replace('_', ' ')
 
@@ -62,11 +60,12 @@ def index():
         else:
             data[row[0]] = row[1]
 
-    return render_template('index.html', **data, s_temp=cp['g']['temp_humid'], s_light=cp['g']['light'], s_soil=cp['g']['soil_moisture'])
+    return render_template('index.html', **data, s_temp=cp['g']['temp_humid'], s_light=cp['g']['light'],
+                           s_soil=cp['g']['soil_moisture'])
+
 
 @app.route('/test/', methods=['GET', 'POST'])
 def test():
-
     return render_template('test.html')
 
 
@@ -101,7 +100,6 @@ def water_all():
 
 @app.route('/add_plant/', methods=['GET', 'POST'])
 def add_plant():
-
     (req, key, combined_name, soil_choice) = read_req_db()
     combined_name = ['none'] + combined_name
 
@@ -111,7 +109,7 @@ def add_plant():
 
     if form.is_submitted():
         result = get_form_data(list(request.form.values()))
-        #since checkboxes do not return in POST objects if unchecked...
+        # since checkboxes do not return in POST objects if unchecked...
         print(len(result))
         if len(result) == 11:
             result[10] = 1
@@ -120,17 +118,19 @@ def add_plant():
         print(result)
         uploaded_file = request.files['pic']
         if uploaded_file.filename != '':
-            ext = os.path.splitext(uploaded_file.filename)[1]  # extract the file extension - this adds support for multiple image types (PNG, JPG, etc.)
-            pic_save_path = getcwd() + '/static/' + 'plant_img_' + str(result[0] + ext)  # rename file based on unique plant name
+            ext = os.path.splitext(uploaded_file.filename)[
+                1]  # extract the file extension - this adds support for multiple image types (PNG, JPG, etc.)
+            pic_save_path = getcwd() + '/static/' + 'plant_img_' + str(
+                result[0] + ext)  # rename file based on unique plant name
             result.append('plant_img_' + result[0] + ext)  # add pic path to the database for later reference in html.
             result.append(1)  # change bool "has_pic" to true
             add_plant_to_database(result)
             uploaded_file.save(pic_save_path)
-            img_resize(pic_save_path, 1000) # resize image to max size, shortens load time when image is retrieved
+            img_resize(pic_save_path, 1000)  # resize image to max size, shortens load time when image is retrieved
 
         else:
             result.append('none')
-            result.append(0) # change bool "has_pic" to false
+            result.append(0)  # change bool "has_pic" to false
             add_plant_to_database(result)
         return redirect(url_for('my_plants'))
 
@@ -139,7 +139,7 @@ def add_plant():
 
 @app.route('/edit_plant/<id>', methods=['GET', 'POST'])
 def edit_plant(id):
-    print('id='+str(id))
+    print('id=' + str(id))
     (columns, row) = read_row(cp['g']['plant_db_path'] + 'my_plants.db', 'houseplants', 'ID', id)
 
     form = EditPlant(
@@ -168,21 +168,22 @@ def edit_plant(id):
         if uploaded_file.filename != '':
             # check if image already exists for this entry, if true delete existing image
             if plant_image_exists(result[0]) != False:
-                    del_plant_image(result[0])
+                del_plant_image(result[0])
 
             # extract the file extension - this adds support for multiple image types (PNG, JPG, etc.)
             ext = os.path.splitext(uploaded_file.filename)[1]
-            pic_save_path = getcwd() + '/static/' + 'plant_img_' + str(result[0] + ext)  # rename file based on unique plant name
+            pic_save_path = getcwd() + '/static/' + 'plant_img_' + str(
+                result[0] + ext)  # rename file based on unique plant name
             result.append('plant_img_' + row[1] + ext)  # add pic path to the database for later reference in html.
             result.append(1)  # change bool "has_pic" to true
             update_plant(id, result)
             uploaded_file.save(pic_save_path)
-            img_resize(pic_save_path, 1000) # resize image to max size, shortens load time when image is retrieved
+            img_resize(pic_save_path, 1000)  # resize image to max size, shortens load time when image is retrieved
 
         else:
             if plant_image_exists(row[1]):
                 result.append(plant_image_exists(row[1]))
-                result.append(1) # keep bool "has_pic" to true
+                result.append(1)  # keep bool "has_pic" to true
             else:
                 result.append('none')
                 result.append(0)  # change bool "has_pic" to false
@@ -229,7 +230,8 @@ def my_journal():
 
 @app.route('/my_journal_filter/<plant>')
 def my_journal_filter(plant):
-    (columns, rows) = read_sql(cp['g']['plant_db_path'] + 'my_plants.db', 'select * from journal where plant="' + str(plant) + '"')
+    (columns, rows) = read_sql(cp['g']['plant_db_path'] + 'my_plants.db',
+                               'select * from journal where plant="' + str(plant) + '"')
     for row in rows:
         print(row)
     return render_template('my_journal_filter.html', columns=columns, rows=rows)
@@ -254,16 +256,19 @@ def add_journal():
         uploaded_file = request.files['pic']
 
         if uploaded_file.filename != '':
-            ext = os.path.splitext(uploaded_file.filename)[1]  # extract the file extension - this adds support for multiple image types (PNG, JPG, etc.)
-            pic_save_path = getcwd() + '/static/journal_img_' + str(result[0] + '_' + result[1] + ext)  # rename file based on journal date & title
+            ext = os.path.splitext(uploaded_file.filename)[
+                1]  # extract the file extension - this adds support for multiple image types (PNG, JPG, etc.)
+            pic_save_path = getcwd() + '/static/journal_img_' + str(
+                result[0] + '_' + result[1] + ext)  # rename file based on journal date & title
             result.append(1)  # change bool "has_pic" to true
-            result.append('journal_img_' + result[0] + '_' + result[1] + ext)  # add pic path to the database for later reference in html.
+            result.append('journal_img_' + result[0] + '_' + result[
+                1] + ext)  # add pic path to the database for later reference in html.
             add_journal_db(result)
             uploaded_file.save(pic_save_path)
-            img_resize(pic_save_path, 1000) # resize image to max size, shortens load time when image is retrieved
+            img_resize(pic_save_path, 1000)  # resize image to max size, shortens load time when image is retrieved
 
         else:
-            result.append(0) # change bool "has_pic" to false
+            result.append(0)  # change bool "has_pic" to false
             result.append('none')
             add_journal_db(result)
 
@@ -280,7 +285,8 @@ def del_journal(id, pic_name):
     sleep(1)
     return redirect(url_for('my_journal'))
 
-#--------------------------------------------------------------------------------
+
+# --------------------------------------------------------------------------------
 # set of pages with resources info on plant care
 @app.route('/resources_list_req/')
 def resources_list_req():
@@ -290,7 +296,6 @@ def resources_list_req():
 
 @app.route('/resources_add_req_plant/', methods=['GET', 'POST'])
 def resources_add_req_plant():
-
     form = ReqPlant()
     (req, key, combined_name, soil_choice) = read_req_db()
 
@@ -345,6 +350,7 @@ def resources_edit_req(id):
     return render_template('resources_edit_req.html', form=form, id=id, row=row)
 '''
 
+
 # TODO finish soil
 # might need to move to table in req database to allow user def soil mixes
 @app.route('/resources_soil/')
@@ -352,7 +358,7 @@ def resources_soil():
     return render_template('temp.html')
 
 
-#--------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Set of pages for data query
 @app.route('/sql_db_select/', methods=['GET', 'POST'])
 def sql_db_select():
@@ -388,8 +394,8 @@ def sql_result(database, query):
     return render_template('sql_result.html', columns=columns, rows=rows, database=database, query=query)
 
 
-@app.route('/data_plant_select/', methods=['GET', 'POST'])
-def data_plant_select():
+@app.route('/data_location_select/', methods=['GET', 'POST'])
+def data_location_select():
     form = GenSelect()
 
     (c, r) = read_sql(cp['g']['plant_db_path'] + 'my_plants.db', 'select name from houseplants')
@@ -397,66 +403,62 @@ def data_plant_select():
     for i in r:
         plants_list.append(i[0])
     print(plants_list)
-    form.choice.choices = plants_list
+
+    (c, r) = read_sql(cp['g']['plant_db_path'] + 'my_plants.db', 'select name from other_locations')
+
+    other_locations = []
+    for i in r:
+        other_locations.append(i[0])
+
+    form.choice.choices = plants_list + other_locations
 
     if form.is_submitted():
         result = get_form_data(list(request.form.values()))
         print(result)
         plant = result[0]
-        return redirect(url_for('data_plant_display', plant=plant))
+        return redirect(url_for('data_location_display', plant=plant))
 
-    return render_template('data_plant_select.html', form=form)
+    return render_template('data_location_select.html', form=form)
 
 
-@app.route('/data_plant_display/<plant>')
-def data_plant_display(plant):
-
+@app.route('/data_location_display/<plant>')
+def data_location_display(plant):
     # get plant info
     try:
-        plant_id = read_sql(cp['g']['plant_db_path'] + 'my_plants.db', 'select ID from houseplants where name="' + str(plant) + '"')
-        plant_id = plant_id[1][0][0]
-        print(plant_id)
-        (c, p) = read_row(cp['g']['plant_db_path'] + 'my_plants.db', 'houseplants', 'ID', plant_id)
+        (c, p) = read_row(cp['g']['plant_db_path'] + 'my_plants.db', 'houseplants', 'ID', plant)
         print(p)
-    except Exception as e:
-        print(e)
-        p= ['','Error: No plant found :(']
-        for i in range(16):
-            p.append('')
+        is_plant = 1
+        is_other = 0
+    except:
+        p = plant
+        is_plant = 0
+        is_other = 1
 
     # get sensor data
     try:
         data = get_all_plant_data(cp['g']['name'], plant)
-    except:
-        cols = ['drybulb', 'rh', 'vpd', 'lux']
-        var_type = ['_mean', '_max', '_min', '_q_90', '_q_10']
-        data = {}
-        for i in cols:
-            for j in var_type:
-                data[str(i+j)] = 'n-a'
+    except Exception as e:
+        print(e)
     print(data)
 
-    return render_template('data_plant_display.html', p=p, data=data)
+    return render_template('data_location_display.html', p=p, data=data, is_plant=is_plant, is_other=is_other)
 
 
 @app.route('/data_charting_select/', methods=['GET', 'POST'])
 def data_charting_select():
-
     return render_template('temp.html')
 
 
 @app.route('/data_forecast/', methods=['GET', 'POST'])
 def data_forecast():
-
     return render_template('temp.html')
 
 
 @app.route('/settings_basic/', methods=['GET', 'POST'])
 def settings_basic():
-
     form = SettingsBasic()
     current = [cp.get('g', field.name) for field in form if (field.name != 'csrf_token') and (field.name != 'submit')]
-    form.timezone.choices = all_timezones # from pytz module
+    form.timezone.choices = all_timezones  # from pytz module
 
     (c, r) = read_sql(cp['g']['plant_db_path'] + 'my_plants.db', 'select name from houseplants')
     plants_list = []
@@ -497,7 +499,6 @@ def settings_basic():
 
 @app.route('/settings_add_loc/', methods=['GET', 'POST'])
 def settings_add_loc():
-
     print('-------Add New Non-plant Location-------')
     form = NewLocation()
 
@@ -506,7 +507,7 @@ def settings_add_loc():
         result = request.form.to_dict()
         print(result['name'])
         sqlq = 'INSERT INTO other_locations (name) VALUES("' + result['name'] + '")'
-        sql_exec(cp['g']['plant_db_path'] + 'my_plants.db', sqlq) # note this function has err handler built in
+        sql_exec(cp['g']['plant_db_path'] + 'my_plants.db', sqlq)  # note this function has err handler built in
         sleep(1)
         return redirect(url_for('settings_basic'))
 
@@ -515,10 +516,9 @@ def settings_add_loc():
 
 @app.route('/settings_advanced/', methods=['GET', 'POST'])
 def settings_advanced():
-
     form = SettingsAdvanced()
     current = [cp.get('g', field.name) for field in form if (field.name != 'csrf_token') and (field.name != 'submit')]
-    form.timezone.choices = all_timezones # from pytz module
+    form.timezone.choices = all_timezones  # from pytz module
 
     (c, r) = read_sql(cp['g']['plant_db_path'] + 'my_plants.db', 'select name from houseplants')
     plants_list = []
@@ -589,7 +589,8 @@ def log_clear(file):
     clear_log(dname + '/logs/' + file)
     return redirect(url_for('log_result', file=file))
 
-#-----------------------------------------------------------------------------------------------------------#
+
+# -----------------------------------------------------------------------------------------------------------#
 
 
 # this method sets the chart images, database queries, etc. to expire so the browser will fetch new data instead of using the cache
@@ -599,7 +600,8 @@ def add_header(response):
     response.cache_control.public = True
     return response
 
+
 if __name__ == '__main__':
     # '0.0.0.0' = 127.0.0.1 i.e. localhost
     # port = 5000 : we can modify it for localhost
-    app.run(host='0.0.0.0', port=5000, debug=True) # local webserver : app.run()
+    app.run(host='0.0.0.0', port=5000, debug=True)  # local webserver : app.run()
