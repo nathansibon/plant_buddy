@@ -3,9 +3,42 @@
 
 {% block content %}
 
+<div class="collapse" id="collapseWaterCalendar">
+    <div class="card-group my-2">
+    {% for day in days %}
+        <div class="card">
+            <div class="card-header bg-primary">
+                <h5 class="card-title text-white">{{ day_names[day] }}</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                {% for plant in days[day] %}
+                    <li class="list-group-item">{{ plant }}</li>
+                {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+</div>
+
 <div class="container float-left" style="padding-bottom: 15px; padding-top: 10px;">
+    {% if title != '' %}
+        <h3 {% if title == '☠ Plant Graveyard ☠' %}
+                    class="text-dark"
+                {% endif %}
+                {% if title == '$ Sold Plants $' %}
+                    class="text-success"
+                {% endif %}
+        > {{ title }} </h3>
+    {% endif %}
     <a class="btn btn-primary mt-2" href="{{ url_for('add_plant') }}">New plant</a>
-    <a class="btn btn-success mt-2" href="{{ url_for('water_all') }}">Water All Plants</a>
+    <a class="btn btn-success mt-2" href="{{ url_for('water_all') }}">Water All</a>
+
+    <a class="btn btn-outline-secondary mt-2" data-toggle="collapse" href="#collapseWaterCalendar" role="button" aria-expanded="false" aria-controls="collapseWaterCalendar">
+        This Week
+    </a>
+
     <a class="btn btn-outline-secondary mt-2" data-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
         More Detail
     </a>
@@ -13,8 +46,12 @@
       <div class="container mt-2">
           <p>Rotate phone to landscape or view on tablet/desktop for more basic info.
                   Or press the button below for all available info</p>
-          <p><a class="btn btn-outline-secondary" href="{{ url_for('my_plants_detailed') }}">Show All Fields</a></p>
-          <p><img src="/static/my_plants_timeline.png" class="img-fluid"></p>
+          <p>
+              <a class="btn btn-outline-secondary" href="{{ url_for('data_plant_overview') }}">My Plants Overview</a>
+              <a class="btn btn-outline-secondary" href="{{ url_for('my_plants_detailed') }}">Show All Fields</a>
+              <a class="btn btn-outline-dark" href="{{ url_for('my_plants_graveyard') }}">Plant Graveyard</a>
+              <a class="btn btn-outline-success" href="{{ url_for('my_plants_sold') }}">Sold Plants</a>
+          </p>
       </div>
     </div>
 
@@ -36,18 +73,28 @@
             <th></th>
         </tr>
     </thead>
-    <tbody id="table"><!-- TODO "ignore" & "died" buttons -->
+    <tbody id="table">
         {% for item in rows %}
             <tr>
-                <td><a href="{{ url_for('water_one_plant', id=item[0]) }}" class=""><img src="/static/icon-watered.png" class="rounded p-1
+                <td>
+                    {% if item[16] == 0 %}
+                    <a href="{{ url_for('water_one_plant', id=item[0]) }}">
+                    {% endif %}
+                    <img src="/static/icon-watered.png" class="rounded p-1
+
                     {% if item[14] == 1 %}
                     bg-danger
                     {% elif item[15] == 1 %}
                     bg-warning
+                    {% elif item[16] == 1 %}
+                    bg-secondary
                     {% else %}
                     bg-success
                     {% endif %}
-                    " height="30"></a></td>
+
+                    " height="30">
+                    {% if item[16] == 0 %}</a>{% endif %}
+                </td>
                 <td>
                     {% if item[11] != 'none'%}
                     <img src="/static/{{ item[11] }}" height="40" data-toggle="modal" data-target="#{{ item[1].replace(' ','') }}"> <!--a plant name might include a space, which would break the link to modal. replace() removes the space-->

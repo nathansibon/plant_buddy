@@ -10,13 +10,13 @@ from PIL import Image
 import matplotlib
 import matplotlib.pyplot as plt
 
-
 cp = ConfigParser()
 cp.read('config.ini')
 
 # set matplotlib to "backend mode" to avoid multi-threadding errors
 # https://github.com/matplotlib/matplotlib/issues/14304/
 matplotlib.use('agg')
+
 
 # read requirements database to feed into functions below
 def read_req_db():
@@ -27,6 +27,7 @@ def read_req_db():
     req = pd.read_sql_query('SELECT * FROM requirements ORDER BY "botanical_name"', con)
     key = pd.read_sql_query('SELECT * FROM key', con)
     combined_name = (req['botanical_name'] + ' (' + req['common_name'] + ')').tolist()
+    print(req.head())
     soil_choice = (key['soil']).tolist()
 
     return (req, key, combined_name, soil_choice)
@@ -35,7 +36,7 @@ def read_req_db():
 # specific functions for webpages
 def get_form_data(in_list):
     output = []
-
+    print(in_list)
     for i in range(len(in_list) - 1):  # must be len()-1 to remove submit
         try:
             output.append(int(in_list[i]))
@@ -160,7 +161,7 @@ def verify_db(database):
     con.commit()
 
     con.close()
-    print('Database ' + database + 'verified')
+    print(database + ' verified')
 
 
 def get_db_tables(database):
@@ -225,6 +226,7 @@ def read_row(database, table, id_column, id):
 def read_sql(database, query):
     print('--------Start Database Query--------')
     print('Query:' + query)
+    query = query.lower()
     database = str(database)
     print(database)
 
@@ -315,110 +317,50 @@ def read_all(table):
     return (columns, rows)
 
 
-def add_plant_to_database(result):
+def add_new_plant(result):
+
     print('----Starting add plant to db----')
-    print(result)
 
     # add last plant vars
-    last = [
-        pd.Timestamp.now() - pd.Timestamp(result[6]),  # days_since_last_water
-        0,  # need water
-        0,  # water_warning
-        0,  # death
-        date.today().strftime('%Y/%m/%d')  # last re-pot date
-    ]
+    result['ignore'] = 0
+    result['need_water'] = 0
+    result['water_warning'] = 0
+    result['death'] = 0
+    result['sold'] = 0
+    result['days_since_last_water'] = pd.Timestamp.now() - pd.Timestamp(result.get('last_watered'))
+    result['last_repot_date'] = date.today().strftime('%Y/%m/%d')
 
-    if last[0] >= pd.Timedelta(str(result[5]) + ' days'):  # days_since_last_water > watering_schedule_in_days
-        last[1] = 1  # need water = true
-    elif pd.Timedelta(str(result[5]) + ' days') - last[0] < pd.Timedelta(
-            '3 days'):  # watering_schedule_in_days - days_since_last_water
-        last[2] = 1  # if less than 3 days until needs water, set warning to True
-    last[0] = last[0].days  # set days_since_last_water back to integer from Pandas Timedelta
+    print(type(result.get('water_schedule_in_days')))
 
-    for i in last:
-        result.append(i)
+    if result.get('days_since_last_water') >= pd.Timedelta(result.get('water_schedule_in_days') + ' days'):
+        result['need_water'] = 1
+    elif pd.Timedelta(str(result.get('water_schedule_in_days')) + ' days') - result.get('days_since_last_water') < pd.Timedelta('3 days'):
+        result['water_warning'] = 1  # if less than 3 days until needs water, set warning to True
+    result['days_since_last_water'] = result.get('days_since_last_water').days  # set days_since_last_water back to integer from Pandas Timedelta
 
     print(result)
-
-    try:
-        con = sql.connect(cp['g']['plant_db_path'] + 'my_plants.db')
-        cur = con.cursor()
-        cur.execute('INSERT INTO houseplants('
-                    'name, '
-                    'species,'
-                    'location, '
-                    'purchased_from,'
-                    'purchase_date, '
-                    'water_schedule_in_days,'
-                    'last_watered,'
-                    'substrate,'
-                    'pot_size,'
-                    'leaf_temp_offset,'
-                    'ignore,'
-                    'pic_path,'
-                    'has_pic,'
-                    'days_since_last_water,'
-                    'need_water,'
-                    'water_warning,'
-                    'death,'
-                    'last_repot_date)'
-                    'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                    result)
-        con.commit()
-
-    except con.Error as err:
-        print(err)
-
-    finally:
-        con.close()
+    sql_insert(cp['g']['plant_db_path'] + 'my_plants.db', 'houseplants', result)
 
 
-def update_plant(id, new_values):
+def update_plant(id, result):
     print('----Starting update plant----')
-    # cur.execute can only take 2 arguments so we need to add the ID to the list
-    print(new_values)
+    print(result)
+    print(type(result))
+    print(type(result.get('last_watered')))
 
-    last = [
-        pd.Timestamp.now() - pd.Timestamp(new_values[2]),  # days_since_last_water
-        0,  # need water
-        0,  # water_warning
-    ]
+    result['days_since_last_water'] = pd.Timestamp.now() - pd.Timestamp(result.get('last_watered'))  # days_since_last_water
+    result['need_water'] = 0
+    result['water_warning'] = 0
+    print(result.get('need_water'))
 
-    if last[0] >= pd.Timedelta(str(new_values[1]) + ' days'):  # days_since_last_water > watering_schedule_in_days
-        last[1] = 1  # need water = true
-    elif pd.Timedelta(str(new_values[1]) + ' days') - last[0] < pd.Timedelta(
-            '3 days'):  # watering_schedule_in_days - days_since_last_water
-        last[2] = 1  # if less than 3 days until needs water, set warning to True
-    last[0] = last[0].days  # set days_since_last_water back to integer from Pandas Timestamp
+    if result.get('days_since_last_water') >= pd.Timedelta(result.get('water_schedule_in_days') + ' days'):  # days_since_last_water > water_schedule_in_days
+        result['need_water'] = 1
+    elif pd.Timedelta(result.get('water_schedule_in_days') + ' days') - result.get('days_since_last_water') < pd.Timedelta('3 days'):
+        result['water_warning'] = 1  # if less than 3 days until needs water, set warning to True
+    result['days_since_last_water'] = result.get('days_since_last_water').days  # set days_since_last_water back to integer from Pandas Timestamp
 
-    for i in last:
-        new_values.append(i)
-
-    new_values.append(id)
-    print(new_values)
-
-    con = sql.connect(cp['g']['plant_db_path'] + 'my_plants.db')
-    cur = con.cursor()
-
-    cur.execute('UPDATE houseplants '
-                'SET '
-                'location = ?, '
-                'water_schedule_in_days = ?,'
-                'last_watered = ?,'
-                'substrate = ?,'
-                'pot_size = ?,'
-                'leaf_temp_offset = ?,'
-                'ignore = ?'
-                'last_repot_date = ?,'
-                'pic_path = ?,'
-                'has_pic = ?,'
-                'days_since_last_water = ?,'
-                'need_water = ?,'
-                'water_warning = ?'
-                'WHERE ID = ?', new_values)
-
-    con.commit()
-    con.close()
+    print(result)
+    sql_update(cp['g']['plant_db_path'] + 'my_plants.db', 'houseplants', result, 'id', id)
 
 
 def del_plant(id):
@@ -492,14 +434,51 @@ def get_all_plant_data(database, plant):
     return result
 
 
-def plant_timeline(database, static_path):
+def plant_watering_week():
 
+    current = datetime.now().date()
+
+    day_names = {}
+    days = {}
+
+    for i in range(0, 8):
+        days[str(i)] = []
+        day_names[str(i)] = (current + timedelta(days=i)).strftime('%A')
+    print(days)
+
+    con = sql.connect(cp['g']['plant_db_path'] + 'my_plants.db')
+    cur = con.cursor()
+
+    cur.execute(
+        'SELECT id, name, water_schedule_in_days, last_watered, days_since_last_water FROM houseplants WHERE ignore = 0'
+    )
+    # sort plants into next 7 days of watering
+    for i in cur:
+        if i[2] - i[4] < 0:
+            days['0'].append(i[1])
+        elif i[2] - i[4] > 7:
+            pass
+        else:
+            days[str(i[2] - i[4])].append(i[1])  # water_schedule_in_days - days_since_last_water, name
+
+    print(days)
+    ''' USE THIS TO ITERATE THROUGH RETURNED DICT
+    for key in days:
+        print(key)
+        for plant in days[key]:
+            print(plant)
+    '''
+    return days, day_names
+
+
+def plant_overview_charts(database, static_path):
     con = sql.connect(database)
 
     p = pd.read_sql_query('select * from houseplants', con)
 
     print(p.columns)
 
+    # --------- Plant Timeline ---------
     p['count'] = 1
     p['cum'] = p.sort_values('purchase_date')['count'].cumsum()
     sub = p[['purchase_date', 'cum', 'name']].sort_values('purchase_date')
@@ -515,7 +494,7 @@ def plant_timeline(database, static_path):
     ax.set(title='Plant Family Timeline')
 
     markerline, stemline, baseline = ax.stem(sub['purchase_date'], levels,
-                                             linefmt="blue", basefmt="k-")#,use_line_collection=True)
+                                             linefmt="blue", basefmt="k-")  # ,use_line_collection=True)
 
     plt.setp(markerline, mec="k", mfc="w", zorder=3)
 
@@ -534,7 +513,67 @@ def plant_timeline(database, static_path):
         ax.spines[spine].set_visible(False)
 
     ax.margins(y=0.1)
+    plt.xticks(rotation=45)
     plt.savefig(static_path + 'my_plants_timeline.png', format='png', dpi=200)
+
+    # --------- Plant Location Counts ---------
+    d = p['location'].value_counts()
+    print(d.index.values)
+    print(d.values)
+
+    new_labels = [i.replace(' ', '\n') for i, j in d.iteritems()]
+
+    fig, axs = plt.subplots(figsize=(8, 4))
+    axs.bar(new_labels, d.values)
+    fig.suptitle('Plant Locations')
+    plt.tight_layout()
+    plt.savefig(static_path + 'my_plants_location.png', format='png', dpi=200)
+
+    # --------- Plant Watering Schedules ---------
+    d = p['water_schedule_in_days'].value_counts()
+    print(d.index.values)
+    print(d.values)
+
+    fig, axs = plt.subplots(figsize=(8, 4))
+    axs.bar(d.index.values, d.values)
+    fig.suptitle('Plant Watering Schedules (days)')
+    plt.savefig(static_path + 'my_plants_water_schedule.png', format='png', dpi=200)
+
+    # --------- Plant Pot Sizes ---------
+    d = p['pot_size'].value_counts()
+    print(d.index.values)
+    print(d.values)
+
+    fig, axs = plt.subplots(figsize=(8, 4))
+    axs.bar(d.index.values, d.values)
+    fig.suptitle('Plant Pot Sizes (in)')
+    plt.savefig(static_path + 'my_plants_pot_size.png', format='png', dpi=200)
+
+    # --------- Plant Purchase Locations ---------
+    d = p['purchased_from'].value_counts()
+    print(d.index.values)
+    print(d.values)
+
+    new_labels = [i.replace(' ', '\n') for i, j in d.iteritems()]
+
+    fig, axs = plt.subplots(figsize=(8, 5))
+    axs.bar(new_labels, d.values)
+    fig.suptitle('Plants Purchased From')
+    plt.tight_layout()
+    plt.savefig(static_path + 'my_plants_purchased_from.png', format='png', dpi=200)
+
+
+def update_global():
+    # update plants_to_water global variable
+    print('-----------------Updating Global-----------------')
+    con = sql.connect(cp['g']['plant_db_path'] + 'my_plants.db')
+    cur = con.cursor()
+    cur.execute('select count(*) from houseplants where need_water="1" OR water_warning="1"')
+    count = cur.fetchone()
+    print('plants_to_water = ' + str(count[0]))
+    cp.set('water', 'plants_to_water', str(count[0]))
+    with open('config.ini', 'w') as f:
+        cp.write(f)
 
 
 def update_water():
@@ -574,6 +613,8 @@ def update_water():
                 i[0]) + '"')
         con.commit()
 
+    update_global()
+
     con.close()
     print('-----------End Update Water-----------')
 
@@ -608,6 +649,46 @@ def water_plant(id):
                     'WHERE ID = ?',
                     [datetime.today().strftime('%Y-%m-%d'), 0, 0, 0, id])
 
+    con.commit()
+    con.close()
+    update_global()
+
+
+def set_plant_ignore(id, current):
+    print('----Starting plant ignore----')
+
+    print('Current: ' + current)
+    val = 1 - int(current)  # swaps between 0 and 1
+
+    con = sql.connect(cp['g']['plant_db_path'] + 'my_plants.db')
+    cur = con.cursor()
+
+    print('plant death, id= ' + str(id))
+    cur.execute('UPDATE houseplants SET ignore = ? WHERE ID = ?', [val, id])
+    con.commit()
+    con.close()
+
+
+def set_plant_death(id):
+    print('----Starting plant death----')
+
+    con = sql.connect(cp['g']['plant_db_path'] + 'my_plants.db')
+    cur = con.cursor()
+
+    print('plant death, id= ' + str(id))
+    cur.execute('UPDATE houseplants SET death = ? WHERE ID = ?', [1, id])
+    con.commit()
+    con.close()
+
+
+def set_plant_sold(id):
+    print('----Starting plant sold----')
+
+    con = sql.connect(cp['g']['plant_db_path'] + 'my_plants.db')
+    cur = con.cursor()
+
+    print('plant sold, id= ' + str(id))
+    cur.execute('UPDATE houseplants SET sold = ? WHERE ID = ?', [1, id])
     con.commit()
     con.close()
 
@@ -673,7 +754,7 @@ def read_req():
     print(columns[1])
 
     # returns a tuple of table names in this database
-    cur.execute('SELECT * FROM requirements ORDER BY "botanical_name')
+    cur.execute('SELECT * FROM requirements ORDER BY "botanical_name"')
 
     # returns list of rows
     rows = cur.fetchall()
@@ -715,117 +796,54 @@ def add_journal_db(result):
 
 def add_req(result):
     print('----Starting add requirement----')
-
     (req, key, combined_name, soil_choice) = read_req_db()
 
     print('start conversion')
     print(result)
     # process input from webpage - convert text descriptions to numeric keys and calculate tolerances
-    t = [result.get('species'), result.get('common_name')]
+    t = {'botanical_name': result.get('botanical_name'), 'common_name': result.get('common_name')}
 
-    t.append(float(
-        key[(key['light'] == result.get('light_low')) | (key['light'] == result.get('light_high'))].category.mean()))
-    t.append(float(abs(key[key['light'] == result.get('light_high')].category.values[0] -
-                       key[key['light'] == result.get('light_low')].category.values[0])))
+    t['light_category'] = float(key[(key['light'] == result.get('light_low')) | (key['light'] == result.get('light_high'))].category.mean())
+    t['light_tolerance'] = float(abs(key[key['light'] == result.get('light_high')].category.values[0] - key[key['light'] == result.get('light_low')].category.values[0]))
 
-    t.append(
-        float(key[(key['temp'] == result.get('temp_low')) | (key['temp'] == result.get('temp_high'))].category.mean()))
-    t.append(float(abs(key[key['temp'] == result.get('temp_high')].category.values[0] -
-                       key[key['temp'] == result.get('temp_low')].category.values[0])))
+    t['temp_category'] = float(key[(key['temp'] == result.get('temp_low')) | (key['temp'] == result.get('temp_high'))].category.mean())
+    t['temp_tolerance'] = float(abs(key[key['temp'] == result.get('temp_high')].category.values[0] - key[key['temp'] == result.get('temp_low')].category.values[0]))
 
-    t.append(float(key[(key['rh'] == result.get('rh_low')) | (key['rh'] == result.get('rh_high'))].category.mean()))
-    t.append(float(abs(key[key['rh'] == result.get('rh_high')].category.values[0] -
-                       key[key['rh'] == result.get('rh_low')].category.values[0])))
+    t['rh_category'] = float(key[(key['rh'] == result.get('rh_low')) | (key['rh'] == result.get('rh_high'))].category.mean())
+    t['rh_tolerance'] = float(abs(key[key['rh'] == result.get('rh_high')].category.values[0] - key[key['rh'] == result.get('rh_low')].category.values[0]))
 
-    t.append(float(
-        key[(key['water'] == result.get('water_low')) | (key['water'] == result.get('water_high'))].category.mean()))
-    t.append(float(abs(key[key['water'] == result.get('water_high')].category.values[0] -
-                       key[key['water'] == result.get('water_low')].category.values[0])))
+    t['water_category'] = float(key[(key['water'] == result.get('water_low')) | (key['water'] == result.get('water_high'))].category.mean())
+    t['water_tolerance'] = float(abs(key[key['water'] == result.get('water_high')].category.values[0] - key[key['water'] == result.get('water_low')].category.values[0]))
 
-    t.append(float(key[key['soil'] == 'Foliage plants'].category.values[0]))
+    t['soil_category'] = float(key[key['soil'] == 'Foliage plants'].category.values[0])
 
-    try:
-        con = sql.connect(cp['g']['plant_req_db_path'] + 'plant_requirements.db')
-        c = con.cursor()
-        c.execute('INSERT INTO requirements('
-                  'botanical_name, '
-                  'common_name,'
-                  'light_category,'
-                  'light_tolerance,'
-                  'temp_category,'
-                  'temp_tolerance,'
-                  'rh_category,'
-                  'rh_tolerance,'
-                  'water_category,'
-                  'water_tolerance,'
-                  'soil_category)'
-                  'VALUES (?,?,?,?,?,?,?,?,?,?,?)',
-                  t)
-        con.commit()
-
-    except con.Error as err:
-        print(err)
-
-    finally:
-        con.close()
+    sql_insert(cp['g']['plant_req_db_path'] + 'plant_requirements.db', 'requirements', t)
 
 
 def update_req(id, key, new_values):
+    # todo test updated sql functions
     print('----Starting read requirement----')
-
     print('start conversion')
     print(new_values)
+
     # process input from webpage - convert text descriptions to numeric keys and calculate tolerances
-    t = [new_values.get('species'), new_values.get('common_name')]
+    t = {}
 
-    t.append(float(
-        key[(key['light'] == new_values.get('light_low')) | (
-                key['light'] == new_values.get('light_high'))].category.mean()))
-    t.append(float(abs(key[key['light'] == new_values.get('light_high')].category.values[0] -
-                       key[key['light'] == new_values.get('light_low')].category.values[0])))
+    t['light_category'] = float(key[(key['light'] == new_values.get('light_low')) | (key['light'] == new_values.get('light_high'))].category.mean())
+    t['light_tolerance'] = float(abs(key[key['light'] == new_values.get('light_high')].category.values[0] - key[key['light'] == new_values.get('light_low')].category.values[0]))
 
-    t.append(
-        float(key[(key['temp'] == new_values.get('temp_low')) | (
-                key['temp'] == new_values.get('temp_high'))].category.mean()))
-    t.append(float(abs(key[key['temp'] == new_values.get('temp_high')].category.values[0] -
-                       key[key['temp'] == new_values.get('temp_low')].category.values[0])))
+    t['temp_category'] = float(key[(key['temp'] == new_values.get('temp_low')) | (key['temp'] == new_values.get('temp_high'))].category.mean())
+    t['temp_tolerance'] = float(abs(key[key['temp'] == new_values.get('temp_high')].category.values[0] - key[key['temp'] == new_values.get('temp_low')].category.values[0]))
 
-    t.append(
-        float(key[(key['rh'] == new_values.get('rh_low')) | (key['rh'] == new_values.get('rh_high'))].category.mean()))
-    t.append(float(abs(key[key['rh'] == new_values.get('rh_high')].category.values[0] -
-                       key[key['rh'] == new_values.get('rh_low')].category.values[0])))
+    t['rh_category'] = float(key[(key['rh'] == new_values.get('rh_low')) | (key['rh'] == new_values.get('rh_high'))].category.mean())
+    t['rh_tolerance'] = float(abs(key[key['rh'] == new_values.get('rh_high')].category.values[0] - key[key['rh'] == new_values.get('rh_low')].category.values[0]))
 
-    t.append(float(
-        key[(key['water'] == new_values.get('water_low')) | (
-                key['water'] == new_values.get('water_high'))].category.mean()))
-    t.append(float(abs(key[key['water'] == new_values.get('water_high')].category.values[0] -
-                       key[key['water'] == new_values.get('water_low')].category.values[0])))
+    t['water_category'] = float(key[(key['water'] == new_values.get('water_low')) | (key['water'] == new_values.get('water_high'))].category.mean())
+    t['water_tolerance'] = float(abs(key[key['water'] == new_values.get('water_high')].category.values[0] - key[key['water'] == new_values.get('water_low')].category.values[0]))
 
-    t.append(float(key[key['soil'] == 'Foliage plants'].category.values[0]))
+    t['soil_category'] = float(key[key['soil'] == 'Foliage plants'].category.values[0])
 
-    # cur.execute can only take 2 arguments so we need to add the ID to the list
-    t.append(id)
-
-    con = sql.connect(cp['g']['plant_req_db_path'] + 'plant_requirements.db')
-    cur = con.cursor()
-
-    cur.execute('UPDATE requirements '
-                'SET '
-                'botanical_name = ?, '
-                'common_name = ?, '
-                'light_category = ?, '
-                'light_tolerance = ?, '
-                'temp_category = ?, '
-                'temp_tolerance = ?, '
-                'rh_category = ?, '
-                'rh_tolerance = ?, '
-                'water_category = ?, '
-                'water_tolerance = ?, '
-                'soil_category = ? '
-                'WHERE ID = ?', t)
-
-    con.commit()
-    con.close()
+    sql_update(cp['g']['plant_req_db_path'] + 'plant_requirements.db', 'requirements', id, t)
 
 
 def img_resize(infile, max_size):
@@ -853,3 +871,46 @@ def read_log(f_abs_path):
 def clear_log(f_abs_path):
     with open(f_abs_path, 'w') as f:
         pass
+
+
+def fix_null_col(database, table, col, value):
+    con = sql.connect(database)
+    cur = con.cursor()
+    cur.execute('update ' + table + ' set ' + col + ' = ' + value + ' where ' + col + ' is null')
+    con.commit()
+    con.close()
+
+
+def sql_insert(database, table, new_values):
+    # inserts new entry into a database
+    # new_values should be a dictionary with keys matching column names
+    con = sql.connect(database)
+    # build query into a single string
+    q = 'INSERT INTO ' + table + '('
+    values = []
+    for key in new_values:
+        q = q + key + ', '
+        values.append(new_values[key])
+    q = q[: -2]  # remove last 2 characters, which at this point are unnecessary comma & space from the last loop
+    print(q)
+    q = q + ') VALUES ('
+    for i in range(len(values)):
+        q = q + '?, '
+    q = q[: -2]
+    q = q + ')'
+    print(q)
+    print(values)
+    con.execute(q, values)
+    con.commit()
+    con.close()
+
+
+def sql_update(database, table, new_values, id_name, id):
+    # updates all columns for a single entry
+    # new_values should be a dictionary with keys matching column names
+    con = sql.connect(database)
+    for key in new_values:
+        print('update ' + table + ' set ' + key + ' = ' + str(new_values[key]) + ' where ' + id_name + ' = ' + id)
+        con.execute('update ' + table + ' set ' + key + ' = "' + str(new_values[key]) + '" where ' + id_name + ' = ' + id)
+        con.commit()
+    con.close()

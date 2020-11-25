@@ -217,7 +217,7 @@ def calc_indoor_weather(data):
         wet_bulb(data[3], data[4]),
         dew_point(data[3], data[4]),
         vpd(data[3], data[4]),
-        rh_for_vpd(data[3], int(cp['g']['ideal_vpd']))
+        rh_for_vpd(data[3], float(cp['g']['ideal_vpd']))
     ]
 
     # new list is now [0] datetime [1] serial [2] location [3] drybulb [4] rh [5] wet bulb [6] dew point, [7] vapor pressure deficit, [8] rh for vpd
@@ -781,10 +781,10 @@ def update_web_vars_sensor(indoor, outdoor):
         dict['indoor_rh'] = str(math.floor(indoor[4] * 100))
         dict['req_rh'] = str(math.floor(indoor[8] * 100))
         dict['indoor_vpd'] = str(indoor[7])
-        if math.floor(indoor[3]) <= math.floor(indoor[6] + 2):  # set dewpoint warning with 2 degree C margin
-            dict['dewpoint_warning'] = 1
+        if math.floor(indoor[4] * 100) > 95:
+            dict['condensation_warning'] = 1
         else:
-            dict['dewpoint_warning'] = 0
+            dict['condensation_warning'] = 0
     else:
         dict['indoor_drybulb'] = 'n/a'
         dict['indoor_rh'] = 'n/a'

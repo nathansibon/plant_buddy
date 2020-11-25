@@ -5,7 +5,7 @@
 
 <div class="container-fluid">
 
-    <h4 class="mb-3 text-secondary">Change System Settings (Advanced)</h4>
+    <h4 class="mb-3 text-secondary">Change System Settings</h4>
 
     <form method="post" autocomplete="off" enctype="multipart/form-data">
         {% for field in form if (field.name != 'csrf_token') and (field.name != 'submit') and (field.type != 'BooleanField') %}
@@ -26,7 +26,7 @@
             <div class="col-sm">{{ form.submit(class="btn btn-primary") }}</div>
         </div>
     </form>
-    <a href="{{ url_for('settings_basic') }}" class="btn btn-outline-secondary mt-2">Back to Basic Settings</a>
+    <p><a href="{{ url_for('settings_add_loc') }}" class="btn btn-outline-secondary mt-2" >Add new non-plant location</a></p>
 </div>
 
 {% endblock %}

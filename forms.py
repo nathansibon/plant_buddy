@@ -12,26 +12,27 @@ class NewPlant(FlaskForm):
     location = wt.StringField('Location')
     purchased_from = wt.StringField('Purchased From')
     purchase_date = wt5.DateField('Purchase Date', format='%Y-%m-%d', default=datetime.today)
-    watering_schedule = wt.IntegerField('Watering Schedule (days)', default=7)
+    water_schedule_in_days = wt.IntegerField('Watering Schedule (days)', default=7)
     last_watered = wt5.DateField('Last Watered', format='%Y-%m-%d', default=datetime.today)
     substrate = wt.SelectField('Substrate')
     pot_size = wt5.DecimalField('Pot Size (in)', default=4)
     leaf_temp_offset = wt5.DecimalField('Leaf Temperature Offset (deg C)', default=0)
-    ignore = wt.BooleanField('Ignore')
     #pic = wt.FileField('Picture') THIS IS CURRENTLY DONE IN THE HTML FILE
     submit = wt.SubmitField('Add')
 
 
 class EditPlant(FlaskForm):
     # note: "last repot date" field will auto-update if the pot size changes, see flask server code
+    species = wt.SelectField('Species')
     location = wt.StringField('Location')
-    watering_schedule = wt.IntegerField('Watering Schedule (days)')
+    purchased_from = wt.StringField('Purchased From')
+    water_schedule_in_days = wt.IntegerField('Watering Schedule (days)')
     last_watered = wt5.DateField('Last Watered', format='%Y-%m-%d')
     substrate = wt.SelectField('Substrate')
     pot_size = wt5.DecimalField('Pot Size (in)')
     leaf_temp_offset = wt5.DecimalField('Leaf Temperature Offset (deg C)')
-    ignore = wt.BooleanField('Ignore during watering')
-    #pic = wt.FileField('Picture') THIS IS CURRENTLY DONE IN THE HTML FILE
+    # pic = wt.FileField('Picture') THIS IS CURRENTLY DONE IN THE HTML FILE
+    # ignore is done via a button
     submit = wt.SubmitField('Update')
 
 
@@ -52,7 +53,7 @@ class FilterJournal(FlaskForm):
 
 class ReqPlant(FlaskForm):
 
-    species = wt.StringField('Botanical Name')
+    botanical_name = wt.StringField('Botanical Name')
     common_name = wt.StringField('Common Name')
 
     light_high = wt.SelectField('Light - High')
@@ -90,23 +91,13 @@ class GenSelect(FlaskForm):
     submit = wt.SubmitField()
 
 
-class SettingsBasic(FlaskForm):
-
-    name = wt.StringField('Name')
-    timezone = wt.SelectField('Time Zone')
-    temp_scale = wt.SelectField('Temperature Scale', choices=['C', 'F'])
-    location = wt.SelectField('Current Location')
-    ideal_vpd = wt5.DecimalField('Ideal VPD')
-    submit = wt.SubmitField('Update')
-
-
 class NewLocation(FlaskForm):
 
     name = wt.StringField('Name')
     submit = wt.SubmitField('Add')
 
 
-class SettingsAdvanced(FlaskForm):
+class Settings(FlaskForm):
 
     name = wt.StringField('Name')
     timezone = wt.SelectField('Time Zone')

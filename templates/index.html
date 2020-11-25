@@ -5,9 +5,9 @@
 
 <div class="container">
 
-    {% if dewpoint_warning == 1 %}
+    {% if condensation_warning == '1' %}
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <strong>Dewpoint Warning!</strong> Raise temperature or lower humidity to avoid condensation
+            <strong>Condensation Warning!</strong> Raise temperature or lower humidity
             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
@@ -28,7 +28,7 @@
             <td class="font-weight-bold">Relative Humidity:</td>
             <td>{{indoor_rh}}%</td>
         </tr><tr>
-            <td class="font-weight-bold">RH for 1 kPa VPD</td>
+            <td class="font-weight-bold">RH for {{ ideal_vpd }} kPa VPD</td>
             <td>{{req_rh}}%</td>
         </tr><tr>
             <td class="font-weight-bold">Dewpoint</td>

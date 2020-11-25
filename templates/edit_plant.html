@@ -8,7 +8,7 @@
     <h4 class="mb-3 text-secondary">Edit Plant #{{ id }} {{ row[1] }}</h4>
 
     <form method="post" autocomplete="off" enctype="multipart/form-data">
-        {% for field in form if (field.name != 'csrf_token') and (field.name != 'submit') %}
+        {% for field in form if (field.name != 'csrf_token') and (field.name != 'submit') and (field.name != 'ignore') %}
             <div class="form row">
                 <div class="col"><label class="form-label"> {{ field.label() }} </label></div>
                 <div class="col"> {{ field(class="form-control") }} </div>
@@ -24,17 +24,39 @@
     </form>
 
     <div class="row mt-2 pl-3">
-        <a class="btn btn-outline-danger" data-toggle="modal" data-target="#delete">Delete Plant</a>
+        <a class="btn btn-outline-secondary mr-2" data-toggle="modal" data-target="#ignore">Toggle Ignore</a>
+        <a class="btn btn-outline-danger mr-2" data-toggle="modal" data-target="#delete">Delete Plant</a>
+        <a class="btn btn-outline-dark mr-2" data-toggle="modal" data-target="#death">Plant Died</a>
+        <a class="btn btn-outline-success mr-2" data-toggle="modal" data-target="#sold">Plant Sold</a>
     </div>
 
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="delete" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<!-- Ignore Modal -->
+<div class="modal fade" id="ignore" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
   <div class="modal-dialog " role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Are you sure?</h5>
+        <h5>Ignore {{ row[1] }}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+          <p>This plant is currently {% if row[16] == 0 %} NOT {% endif %} ignored during watering</p>
+          <p>Are you sure you want change this?</p>
+          <a class="btn btn-warning" href="{{ url_for('ignore_my_plant', id=id, current=row[16]) }}">Confirm</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="delete" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog " role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-danger">
+        <h5 class="modal-title text-white">⌦ Are you sure?</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -43,6 +65,44 @@
           <p>Deleting a plant cannot be undone!</p>
           <p>Are you sure you want to continue?</p>
           <a class="btn btn-danger" href="{{ url_for('del_my_plant', id=id, p_name=row[1]) }}">Confirm Delete Plant</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Death Modal -->
+<div class="modal fade" id="death" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog " role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-dark">
+        <h5 class="modal-title text-white">☠ Are you sure?</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+          <p>Killing a plant cannot be undone (just like real life)!</p>
+          <p>Are you sure you want to continue?</p>
+          <a class="btn btn-dark" href="{{ url_for('plant_death', id=id) }}">Confirm Plant Death</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sold Modal -->
+<div class="modal fade" id="sold" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog " role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-success">
+        <h5 class="modal-title text-white">$ Are you sure?</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+          <p>Selling a plant cannot be undone!</p>
+          <p>Are you sure you want to continue?</p>
+          <a class="btn btn-success" href="{{ url_for('plant_sold', id=id) }}">Confirm Plant Sold</a>
       </div>
     </div>
   </div>

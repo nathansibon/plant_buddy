@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% set active_page = "my_plants" %}
+
+{% block content %}
+
+<div class="container">
+    <div class="row justify-content-center mt-2 mb-4">
+        <h2 class="display-4">Overview of My Plants</h2>
+    </div>
+    <div class="row mb-4">
+        <img class="img-fluid" src="/static/my_plants_timeline.png">
+    </div>
+    <div class="row mb-4">
+        <img class="img-fluid" src="/static/my_plants_location.png">
+    </div>
+    <div class="row mb-4">
+        <img class="img-fluid" src="/static/my_plants_water_schedule.png">
+    </div>
+    <div class="row mb-4">
+        <img class="img-fluid" src="/static/my_plants_pot_size.png">
+    </div>
+    <div class="row mb-4">
+        <img class="img-fluid" src="/static/my_plants_purchased_from.png">
+    </div>
+</div>
+
+{% endblock %}

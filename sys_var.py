@@ -187,7 +187,8 @@ houseplants = [
  ['water_warning', 'smallint'],         # 15
  ['ignore', 'smallint'],                # 16
  ['death', 'smallint'],                 # 17
- ['last_repot_date', 'timestamp']       # 18
+ ['last_repot_date', 'timestamp'],      # 18
+ ['sold', 'smallint']                   # 19
 ]
 
 my_journal = [
