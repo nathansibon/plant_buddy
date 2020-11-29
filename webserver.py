@@ -162,19 +162,21 @@ def add_plant():
         result = request.form.to_dict()
         result.pop('submit')
         print(result)
-        uploaded_file = request.files['pic']
-        if uploaded_file.filename != '':
-            ext = os.path.splitext(uploaded_file.filename)[
-                1]  # extract the file extension - this adds support for multiple image types (PNG, JPG, etc.)
-            pic_save_path = getcwd() + '/static/' + 'plant_img_' + str(
-                result.get('name') + ext)  # rename file based on unique plant name
-            result['pic_path'] = ('plant_img_' + result.get('name') + ext)  # add pic path to the database for later reference in html.
-            result['has_pic'] = 1  # change bool "has_pic" to true
-            add_new_plant(result)
-            uploaded_file.save(pic_save_path)
-            img_resize(pic_save_path, 1000)  # resize image to max size, shortens load time when image is retrieved
+        if 'pic' in request.files:
+            if request.files['pic'] != '':
+                uploaded_file = request.files['pic']
+                ext = os.path.splitext(uploaded_file.filename)[
+                    1]  # extract the file extension - this adds support for multiple image types (PNG, JPG, etc.)
+                pic_save_path = getcwd() + '/static/' + 'plant_img_' + str(
+                    result.get('name') + ext)  # rename file based on unique plant name
+                result['pic_path'] = ('plant_img_' + result.get('name') + ext)  # add pic path to the database for later reference in html.
+                result['has_pic'] = 1  # change bool "has_pic" to true
+                add_new_plant(result)
+                uploaded_file.save(pic_save_path)
+                img_resize(pic_save_path, 1000)  # resize image to max size, shortens load time when image is retrieved
 
         else:
+            result.pop('pic')
             result['pic_path'] = 'none'
             result['has_pic'] = 0  # change bool "has_pic" to false
             add_new_plant(result)
@@ -217,22 +219,23 @@ def edit_plant(id):
             result['last_repot_date'] = row[18]  # 'last_repot_date' from database
 
         # pic
-        uploaded_file = request.files['pic']
-        if uploaded_file.filename != '':
-            print('pic found, check for existing image')
-            # check if image already exists for this entry, if true delete existing image
-            if plant_image_exists(row[1]) != False:
-                del_plant_image(row[1])
-                print('existing image deleted')
+        if 'pic' in request.files:
+            if request.files['pic'] != '':
+                uploaded_file = request.files['pic']
+                print('pic found, check for existing image')
+                # check if image already exists for this entry, if true delete existing image
+                if plant_image_exists(row[1]) != False:
+                    del_plant_image(row[1])
+                    print('existing image deleted')
 
-            # extract the file extension - this adds support for multiple image types (PNG, JPG, etc.)
-            ext = os.path.splitext(uploaded_file.filename)[1]
-            pic_save_path = getcwd() + '/static/' + 'plant_img_' + row[1] + ext  # rename file based on unique plant name
-            result['pic_path'] = 'plant_img_' + row[1] + ext  # add pic path to the database for later reference in html.
-            result['has_pic'] = 1  # change bool "has_pic" to true
-            update_plant(id, result)
-            uploaded_file.save(pic_save_path)
-            img_resize(pic_save_path, 1000)  # resize image to max size, shortens load time when image is retrieved
+                # extract the file extension - this adds support for multiple image types (PNG, JPG, etc.)
+                ext = os.path.splitext(uploaded_file.filename)[1]
+                pic_save_path = getcwd() + '/static/' + 'plant_img_' + row[1] + ext  # rename file based on unique plant name
+                result['pic_path'] = 'plant_img_' + row[1] + ext  # add pic path to the database for later reference in html.
+                result['has_pic'] = 1  # change bool "has_pic" to true
+                update_plant(id, result)
+                uploaded_file.save(pic_save_path)
+                img_resize(pic_save_path, 1000)  # resize image to max size, shortens load time when image is retrieved
 
         else:
             '''
@@ -243,6 +246,7 @@ def edit_plant(id):
                 result['pic_path'] = 'none'
                 result['has_pic'] = 0  # change bool "has_pic" to false
             '''
+            result.pop('pic')
             update_plant(id, result)
 
         return redirect(url_for('my_plants'))
