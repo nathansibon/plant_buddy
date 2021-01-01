@@ -12,6 +12,7 @@ class NewPlant(FlaskForm):
     location = wt.StringField('Location')
     purchased_from = wt.StringField('Purchased From')
     purchase_date = wt5.DateField('Purchase Date', format='%Y-%m-%d', default=datetime.today)
+    parent = wt.SelectField('Parent')
     water_schedule_in_days = wt.IntegerField('Watering Schedule (days)', default=7)
     last_watered = wt5.DateField('Last Watered', format='%Y-%m-%d', default=datetime.today)
     substrate = wt.SelectField('Substrate')

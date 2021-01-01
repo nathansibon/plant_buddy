@@ -86,6 +86,17 @@ def test():
 
 @app.route('/my_plants/')
 def my_plants():
+    if cp['g']['my_plants_view'] == 'list':
+        i = 'my_plants_list'
+    elif cp['g']['my_plants_view'] == 'gallery':
+        i = 'my_plants_gallery'
+    else:
+        print('Error with config file, my_plants_view must be list or gallery')
+    return redirect(url_for(i))
+
+
+@app.route('/my_plants_list/')
+def my_plants_list():
     (c, r) = read_sql(
         cp['g']['plant_db_path'] + 'my_plants.db',
         'SELECT * FROM houseplants WHERE death != 1 and sold != 1 ORDER BY need_water DESC, water_warning DESC'
@@ -94,7 +105,20 @@ def my_plants():
 
     for row in r:
         print(row)
-    return render_template('my_plants.html', columns=c, rows=r, title='', days=days, day_names=day_names, plants_to_water=int(cp['water']['plants_to_water']))
+    return render_template('my_plants_list.html', columns=c, rows=r, title='', days=days, day_names=day_names, plants_to_water=int(cp['water']['plants_to_water']))
+
+
+@app.route('/my_plants_gallery/')
+def my_plants_gallery():
+    (c, r) = read_sql(
+        cp['g']['plant_db_path'] + 'my_plants.db',
+        'SELECT * FROM houseplants WHERE death != 1 and sold != 1 ORDER BY species ASC'
+    )
+    (days, day_names) = plant_watering_week()
+
+    for row in r:
+        print(row)
+    return render_template('my_plants_gallery.html', columns=c, rows=r, title='', days=days, day_names=day_names, plants_to_water=int(cp['water']['plants_to_water']))
 
 
 @app.route('/my_plants_detailed/')
@@ -154,9 +178,19 @@ def add_plant():
     (req, key, combined_name, soil_choice) = read_req_db()
     combined_name = ['none'] + combined_name
 
+    (c, r) = read_sql(
+        cp['g']['plant_db_path'] + 'my_plants.db',
+        'SELECT name, species FROM houseplants WHERE death != 1 and sold != 1 ORDER BY name ASC'
+    )
+
+    parent_choice = ['none']
+    for i in r:
+        parent_choice.append(i[0] + ' ' + i[1])
+
     form = NewPlant()
     form.species.choices = combined_name
     form.substrate.choices = soil_choice
+    form.parent.choices = parent_choice
 
     if form.is_submitted():
         result = request.form.to_dict()
@@ -646,6 +680,21 @@ def settings():
 
     return render_template('settings.html', form=form, current=current, plants_to_water=int(cp['water']['plants_to_water']))
 
+
+@app.route('/settings_swap_my_plants_view/')
+def settings_swap_my_plants_view():
+    print('changing my plants view from ' + cp['g']['my_plants_view'])
+    if cp['g']['my_plants_view'] == 'list':
+        new = 'gallery'
+    else:
+        new = 'list'
+
+    cp.set('g', 'my_plants_view', new)
+    with open('config.ini', 'w') as f:
+        cp.write(f)
+    print('my plants view updated to ' + new)
+
+    return redirect(url_for('my_plants'))
 
 # Set of pages to read system logs
 @app.route('/log_select/', methods=['GET', 'POST'])

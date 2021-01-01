@@ -340,6 +340,7 @@ def add_new_plant(result):
 
     print(result)
     sql_insert(cp['g']['plant_db_path'] + 'my_plants.db', 'houseplants', result)
+    update_global()
 
 
 def update_plant(id, result):
@@ -361,6 +362,7 @@ def update_plant(id, result):
 
     print(result)
     sql_update(cp['g']['plant_db_path'] + 'my_plants.db', 'houseplants', result, 'id', id)
+    update_global()
 
 
 def del_plant(id):
@@ -873,10 +875,15 @@ def clear_log(f_abs_path):
         pass
 
 
-def fix_null_col(database, table, col, value):
+def fix_null_col(database, table, col, value, val_type):
     con = sql.connect(database)
     cur = con.cursor()
-    cur.execute('update ' + table + ' set ' + col + ' = ' + value + ' where ' + col + ' is null')
+    if val_type == 'str':
+        q = 'update ' + table + ' set ' + col + ' = "' + value + '" where ' + col + ' is null'
+    if val_type == 'int':
+        q = 'update ' + table + ' set ' + col + ' = ' + value + ' where ' + col + ' is null'
+    print(q)
+    cur.execute(q)
     con.commit()
     con.close()
 

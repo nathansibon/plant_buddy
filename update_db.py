@@ -14,5 +14,5 @@ cp.read('config.ini')
 verify_db(cp['g']['plant_db_path'] + 'my_plants.db')
 
 # 2020-11-1
-# RESTART THE WEBSERVER FIRST TO ADD MISSING COLUMN 'sold'
-fix_null_col('my_plants.db', 'houseplants', 'sold', '0')
+fix_null_col('my_plants.db', 'houseplants', 'sold', '0', 'int')
+fix_null_col('my_plants.db', 'houseplants', 'parent', 'none', 'str')

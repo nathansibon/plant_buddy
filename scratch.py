@@ -7,9 +7,11 @@ cur = con.cursor()
 con.commit()
 
 '''
-cur.execute('SELECT * FROM houseplants WHERE death != 1 and sold != 1 ORDER BY need_water ASC, water_warning ASC')
+k = []
+cur.execute('SELECT name, species FROM houseplants WHERE death != 1 and sold != 1 ORDER BY name ASC')
 for i in cur.fetchall():
-    print(i)
+    k.append(i[0] + ' ' + i[1])
+print(k)
 
 con.close()
 

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% set active_page = "my_plants" %}
 
-{% block content %}
+{% block content%}
 
 <div class="collapse" id="collapseWaterCalendar">
     <div class="card-group my-2">
@@ -22,7 +22,7 @@
     </div>
 </div>
 
-<div class="container float-left" style="padding-bottom: 15px; padding-top: 10px;">
+<div class="row ml-1 float-left" style="padding-bottom: 15px; padding-top: 10px;">
     {% if title != '' %}
         <h3 {% if title == '☠ Plant Graveyard ☠' %}
                     class="text-dark"
@@ -42,6 +42,7 @@
     <a class="btn btn-outline-secondary mt-2" data-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
         More Detail
     </a>
+    <a class="btn btn-outline-secondary mt-2" href="{{ url_for('settings_swap_my_plants_view') }}">Gallery View</a>
     <div class="collapse" id="collapseExample">
       <div class="container mt-2">
           <p>Rotate phone to landscape or view on tablet/desktop for more basic info.
@@ -54,11 +55,10 @@
           </p>
       </div>
     </div>
-
-
-    <!-- thanks to https://www.w3schools.com/booTsTrap/bootstrap_filters.asp -->
-    <input class="form-control mt-2" id="filterIn" type="text" placeholder="Filter...">
 </div>
+
+<!-- thanks to https://www.w3schools.com/booTsTrap/bootstrap_filters.asp -->
+<input class="form-control mt-2" id="filterIn" type="text" placeholder="Filter...">
 
 <table class="table table-striped sticky-header">
     <thead>
