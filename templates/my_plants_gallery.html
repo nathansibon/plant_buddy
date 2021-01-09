@@ -15,7 +15,19 @@
         <div class="col mb-4">
             <div class="card">
                 <img class="card-img-top" src="/static/{{ item[11] }}" alt="/static/pokemon grass.jpg" data-toggle="modal" data-target="#{{ item[1].replace(' ','') }}">
-                <div class="text-center text-white bg-success pb-1"><small>{{ item[1] }}</small></div>
+                <div class="text-center text-white
+
+                    {% if item[14] == 1 %}
+                    bg-danger
+                    {% elif item[15] == 1 %}
+                    bg-warning
+                    {% elif item[16] == 1 %}
+                    bg-secondary
+                    {% else %}
+                    bg-success
+                    {% endif %}
+
+                pb-1"><small>{{ item[1] }}</small></div>
             </div>
         </div>
         {% endfor %}
